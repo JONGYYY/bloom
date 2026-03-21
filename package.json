@@ -6,21 +6,45 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "workers": "tsx workers/index.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1014.0",
+    "@aws-sdk/lib-storage": "^3.1014.0",
+    "@clerk/nextjs": "^7.0.6",
+    "@hookform/resolvers": "^5.2.2",
+    "@prisma/client": "^7.5.0",
+    "@tanstack/react-query": "^5.94.4",
+    "bullmq": "^5.71.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.38.0",
+    "geist": "^1.7.0",
+    "ioredis": "^5.10.1",
+    "lucide-react": "^0.577.0",
     "next": "16.2.1",
+    "openai": "^6.32.0",
+    "puppeteer": "^24.40.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.71.2",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^20.19.37",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "prisma": "^7.5.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

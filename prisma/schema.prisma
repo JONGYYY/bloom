@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  clerkId         String    @unique
+  themePreference String    @default("dark")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  workspace       Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId     String
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  ownerId   String
+  plan      String   @default("free")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+  brands    Brand[]
+}
+
+model Brand {
+  id           String          @id @default(cuid())
+  workspaceId  String
+  rootDomain   String
+  submittedUrl String
+  displayName  String?
+  status       String          @default("pending")
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  workspace    Workspace       @relation(fields: [workspaceId], references: [id])
+  profile      BrandProfile?
+  assets       BrandAsset[]
+  jobs         GenerationJob[]
+}
+
+model BrandProfile {
+  id          String   @id @default(cuid())
+  brandId     String   @unique
+  version     Int      @default(1)
+  colors      Json
+  fonts       Json
+  logos       Json
+  styleTraits String[]
+  provenance  Json
+  isConfirmed Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  brand       Brand    @relation(fields: [brandId], references: [id])
+}
+
+model BrandAsset {
+  id         String   @id @default(cuid())
+  brandId    String
+  type       String
+  storageKey String
+  metadata   Json?
+  sourceUrl  String?
+  createdAt  DateTime @default(now())
+  brand      Brand    @relation(fields: [brandId], references: [id])
+}
+
+model GenerationJob {
+  id         String   @id @default(cuid())
+  jobType    String
+  status     String   @default("queued")
+  stage      String?
+  brandId    String?
+  payload    Json?
+  progress   Int      @default(0)
+  error      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  brand      Brand?   @relation(fields: [brandId], references: [id])
+}

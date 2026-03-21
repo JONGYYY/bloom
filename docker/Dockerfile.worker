@@ -1,0 +1,44 @@
+# Dockerfile for background workers
+
+FROM node:20-alpine
+
+# Install Chromium for Puppeteer
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# Tell Puppeteer to skip installing Chrome, we'll use installed Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install dependencies
+RUN npm ci
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Copy application code
+COPY . .
+
+# Set environment
+ENV NODE_ENV=production
+
+# Create non-root user
+RUN addgroup --system --gid 1001 workers
+RUN adduser --system --uid 1001 worker
+RUN chown -R worker:workers /app
+
+USER worker
+
+# Run workers
+CMD ["npm", "run", "workers"]
