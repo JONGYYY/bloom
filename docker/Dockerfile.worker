@@ -40,5 +40,5 @@ RUN chown -R worker:workers /app
 
 USER worker
 
-# Run workers
+# Run workers (now in src/workers)
 CMD ["npm", "run", "workers"]

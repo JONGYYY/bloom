@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col chromic-bg">
       {/* Header */}
       <header className="fixed top-0 w-full z-50 glass-panel border-b">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">

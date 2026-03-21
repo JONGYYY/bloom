@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq'
 import puppeteer, { Browser, Page } from 'puppeteer'
 import { connection, extractionQueue } from './queue'
-import { prisma } from '../src/lib/db'
+import { prisma } from '@/lib/db'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
 
@@ -40,7 +40,7 @@ async function capturePage(page: Page, url: string, viewport: { width: number; h
   })
 
   // Wait a bit for any animations
-  await page.waitForTimeout(1000)
+  await new Promise(resolve => setTimeout(resolve, 1000))
 
   // Take screenshot
   const screenshot = await page.screenshot({
@@ -51,7 +51,7 @@ async function capturePage(page: Page, url: string, viewport: { width: number; h
   return screenshot
 }
 
-async function uploadToS3(buffer: Buffer, key: string): Promise<string> {
+async function uploadToS3(buffer: Buffer | Uint8Array, key: string): Promise<string> {
   const upload = new Upload({
     client: s3Client,
     params: {

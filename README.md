@@ -151,13 +151,13 @@ npx prisma migrate dev --name your_migration_name
 │   ├── lib/                       # Utilities
 │   ├── hooks/                     # Custom React hooks
 │   ├── styles/                    # Global styles
-│   └── types/                     # TypeScript types
-├── workers/                       # Background workers
-│   ├── queue.ts                   # BullMQ setup
-│   ├── preflight.ts               # URL validation worker
-│   ├── browser-render.ts          # Screenshot capture worker
-│   ├── extraction.ts              # AI extraction worker
-│   └── index.ts                   # Main worker process
+│   ├── types/                     # TypeScript types
+│   └── workers/                   # Background workers
+│       ├── queue.ts               # BullMQ setup
+│       ├── preflight.ts           # URL validation worker
+│       ├── browser-render.ts      # Screenshot capture worker
+│       ├── extraction.ts          # AI extraction worker
+│       └── index.ts               # Main worker process
 ├── prisma/
 │   └── schema.prisma              # Database schema
 └── docker/                        # Docker configurations

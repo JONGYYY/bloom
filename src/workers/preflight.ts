@@ -1,6 +1,6 @@
 import { Worker, Job } from 'bullmq'
 import { connection, browserRenderQueue } from './queue'
-import { prisma } from '../src/lib/db'
+import { prisma } from '@/lib/db'
 
 interface PreflightJobData {
   brandId: string

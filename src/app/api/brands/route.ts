@@ -73,6 +73,8 @@ export async function POST(request: NextRequest) {
     })
 
     // Enqueue job to BullMQ
+    // Note: Workers run as separate service, job will be picked up from database
+    // In production, ensure worker service is running separately
     try {
       const { preflightQueue } = await import('@/workers/queue')
       await preflightQueue.add('preflight', {
@@ -83,6 +85,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('Error enqueuing job:', error)
       // Continue anyway - job will be in database
+      // Worker service will pick it up when it starts
     }
 
     return NextResponse.json({
@@ -95,7 +98,7 @@ export async function POST(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
+        { error: "Invalid request data", details: error.issues },
         { status: 400 }
       )
     }
