@@ -85,11 +85,6 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
     const browser = await getBrowser()
     const page = await browser.newPage()
 
-    // Add __name helper to avoid esbuild/tsx transpilation issues
-    await page.evaluateOnNewDocument(() => {
-      (window as any).__name = (fn: any, name: string) => fn
-    })
-
     // Set user agent
     await page.setUserAgent(
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -108,6 +103,10 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
       width: 390,
       height: 844,
     })
+
+    // Define __name helper in page context to avoid esbuild/tsx transpilation issues
+    // Using string literal to avoid tsx transpiling this code
+    await page.evaluate('window.__name = function(fn, name) { return fn; }')
 
     // Extract DOM structure and computed styles
     const domData = await page.evaluate(() => {
