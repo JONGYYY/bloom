@@ -70,9 +70,14 @@ export default function SignUpPage() {
 
   return (
     <div className="w-full max-w-md">
-      <div className="glass-panel rounded-lg p-8">
+      <div className="glass-panel rounded-lg p-8" style={{
+        background: 'rgba(28, 35, 49, 0.72)',
+        backdropFilter: 'blur(24px)',
+        border: '1px solid rgba(168, 181, 204, 0.2)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+      }}>
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold mb-2">Get started</h1>
+          <h1 className="text-2xl font-bold mb-2 text-pearl-100">Get started</h1>
           <p className="text-mist-300">Create your account</p>
         </div>
 
@@ -84,7 +89,7 @@ export default function SignUpPage() {
           )}
 
           <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-2">
+            <label htmlFor="name" className="block text-sm font-medium mb-2 text-pearl-100">
               Name
             </label>
             <Input
@@ -95,11 +100,12 @@ export default function SignUpPage() {
               placeholder="Your name"
               required
               disabled={loading}
+              className="bg-graphite-900 text-pearl-100 border border-stroke-subtle"
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
+            <label htmlFor="email" className="block text-sm font-medium mb-2 text-pearl-100">
               Email
             </label>
             <Input
@@ -110,11 +116,12 @@ export default function SignUpPage() {
               placeholder="you@example.com"
               required
               disabled={loading}
+              className="bg-graphite-900 text-pearl-100 border border-stroke-subtle"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-2">
+            <label htmlFor="password" className="block text-sm font-medium mb-2 text-pearl-100">
               Password
             </label>
             <Input
@@ -126,11 +133,12 @@ export default function SignUpPage() {
               required
               minLength={6}
               disabled={loading}
+              className="bg-graphite-900 text-pearl-100 border border-stroke-subtle"
             />
             <p className="text-xs text-mist-300 mt-1">Must be at least 6 characters</p>
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full bg-violet-500 hover:bg-violet-600 text-white" disabled={loading}>
             {loading ? "Creating account..." : "Create account"}
           </Button>
         </form>

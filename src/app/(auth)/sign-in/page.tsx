@@ -39,9 +39,14 @@ function SignInForm() {
 
   return (
     <div className="w-full max-w-md">
-      <div className="glass-panel rounded-lg p-8">
+      <div className="glass-panel rounded-lg p-8" style={{
+        background: 'rgba(28, 35, 49, 0.72)',
+        backdropFilter: 'blur(24px)',
+        border: '1px solid rgba(168, 181, 204, 0.2)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+      }}>
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold mb-2">Welcome back</h1>
+          <h1 className="text-2xl font-bold mb-2 text-pearl-100">Welcome back</h1>
           <p className="text-mist-300">Sign in to your account</p>
         </div>
 
@@ -53,7 +58,7 @@ function SignInForm() {
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
+            <label htmlFor="email" className="block text-sm font-medium mb-2 text-pearl-100">
               Email
             </label>
             <Input
@@ -64,11 +69,12 @@ function SignInForm() {
               placeholder="you@example.com"
               required
               disabled={loading}
+              className="bg-graphite-900 text-pearl-100 border border-stroke-subtle"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-2">
+            <label htmlFor="password" className="block text-sm font-medium mb-2 text-pearl-100">
               Password
             </label>
             <Input
@@ -79,10 +85,11 @@ function SignInForm() {
               placeholder="••••••••"
               required
               disabled={loading}
+              className="bg-graphite-900 text-pearl-100 border border-stroke-subtle"
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full bg-violet-500 hover:bg-violet-600 text-white" disabled={loading}>
             {loading ? "Signing in..." : "Sign in"}
           </Button>
         </form>
