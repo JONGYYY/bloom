@@ -105,47 +105,44 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
     })
 
     // Extract DOM structure and computed styles
-    const domData = await page.evaluate(function() {
-      function getComputedStylesForElement(element: Element) {
-        var styles = window.getComputedStyle(element)
+    // Using string to avoid tsx transpilation issues
+    const domData = await page.evaluate(`(function() {
+      function getComputedStylesForElement(element) {
+        var styles = window.getComputedStyle(element);
         return {
           fontFamily: styles.fontFamily,
           fontSize: styles.fontSize,
           fontWeight: styles.fontWeight,
           color: styles.color,
-          backgroundColor: styles.backgroundColor,
-        }
+          backgroundColor: styles.backgroundColor
+        };
       }
 
-      // Get header/nav elements
-      var header = document.querySelector('header') || document.querySelector('nav')
-      var headerStyles = header ? getComputedStylesForElement(header) : null
+      var header = document.querySelector('header') || document.querySelector('nav');
+      var headerStyles = header ? getComputedStylesForElement(header) : null;
 
-      // Get all images (potential logos)
-      var images = Array.from(document.querySelectorAll('img')).map(function(img: HTMLImageElement) {
+      var images = Array.from(document.querySelectorAll('img')).map(function(img) {
         return {
           src: img.src,
           alt: img.alt,
           width: img.width,
-          height: img.height,
-        }
-      })
+          height: img.height
+        };
+      });
 
-      // Get body styles
-      var bodyStyles = getComputedStylesForElement(document.body)
+      var bodyStyles = getComputedStylesForElement(document.body);
 
-      // Get heading styles
-      var h1 = document.querySelector('h1')
-      var headingStyles = h1 ? getComputedStylesForElement(h1) : null
+      var h1 = document.querySelector('h1');
+      var headingStyles = h1 ? getComputedStylesForElement(h1) : null;
 
       return {
         headerStyles: headerStyles,
         bodyStyles: bodyStyles,
         headingStyles: headingStyles,
-        images: images.slice(0, 10), // Limit to first 10 images
-        title: document.title,
-      }
-    })
+        images: images.slice(0, 10),
+        title: document.title
+      };
+    })()`)
 
     await page.close()
 
