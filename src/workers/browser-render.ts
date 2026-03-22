@@ -106,7 +106,7 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
 
     // Extract DOM structure and computed styles
     const domData = await page.evaluate(function() {
-      function getComputedStylesForElement(element) {
+      function getComputedStylesForElement(element: Element) {
         var styles = window.getComputedStyle(element)
         return {
           fontFamily: styles.fontFamily,
@@ -122,7 +122,7 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
       var headerStyles = header ? getComputedStylesForElement(header) : null
 
       // Get all images (potential logos)
-      var images = Array.from(document.querySelectorAll('img')).map(function(img) {
+      var images = Array.from(document.querySelectorAll('img')).map(function(img: HTMLImageElement) {
         return {
           src: img.src,
           alt: img.alt,
