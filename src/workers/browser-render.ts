@@ -3,6 +3,8 @@ import puppeteer, { Browser, Page } from 'puppeteer'
 import { connection, extractionQueue } from './queue'
 import { prisma } from '@/lib/db'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
 
 interface BrowserRenderJobData {
@@ -52,10 +54,12 @@ async function capturePage(page: Page, url: string, viewport: { width: number; h
 }
 
 async function uploadToS3(buffer: Buffer | Uint8Array, key: string): Promise<string> {
+  const bucketName = process.env.S3_BUCKET_NAME || 'brand-assets'
+  
   const upload = new Upload({
     client: s3Client,
     params: {
-      Bucket: process.env.S3_BUCKET_NAME || 'brand-assets',
+      Bucket: bucketName,
       Key: key,
       Body: buffer,
       ContentType: 'image/png',
@@ -64,7 +68,15 @@ async function uploadToS3(buffer: Buffer | Uint8Array, key: string): Promise<str
 
   await upload.done()
   
-  return `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
+  // Generate a pre-signed URL that expires in 1 hour
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+  })
+  
+  const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 })
+  
+  return signedUrl
 }
 
 async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
