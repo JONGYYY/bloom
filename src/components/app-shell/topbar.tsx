@@ -1,15 +1,19 @@
 "use client"
 
-import { UserButton } from "@clerk/nextjs"
 import { Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { UserMenu } from "./user-menu"
 
 interface TopbarProps {
   title?: string
   breadcrumbs?: { label: string; href?: string }[]
+  user: {
+    email?: string
+    name?: string
+  }
 }
 
-export function Topbar({ title, breadcrumbs }: TopbarProps) {
+export function Topbar({ title, breadcrumbs, user }: TopbarProps) {
   return (
     <header className="h-16 glass-panel border-b flex items-center justify-between px-6">
       <div>
@@ -35,13 +39,7 @@ export function Topbar({ title, breadcrumbs }: TopbarProps) {
           <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           <span className="sr-only">Toggle theme</span>
         </Button>
-        <UserButton 
-          appearance={{
-            elements: {
-              avatarBox: "w-8 h-8"
-            }
-          }}
-        />
+        <UserMenu user={user} />
       </div>
     </header>
   )

@@ -9,7 +9,7 @@ Before you begin, ensure you have:
 - [Node.js 18+](https://nodejs.org/) installed
 - [PostgreSQL](https://www.postgresql.org/) installed and running
 - [Redis](https://redis.io/) installed and running
-- [Clerk](https://clerk.com/) account (free tier works)
+- [Supabase](https://supabase.com/) project (free tier works)
 - [OpenAI](https://openai.com/) API key
 - [AWS](https://aws.amazon.com/) account with S3 bucket
 
@@ -35,13 +35,9 @@ DATABASE_URL="postgresql://user:password@localhost:5432/bloom"
 # Redis - Default local Redis
 REDIS_URL="redis://localhost:6379"
 
-# Clerk - Get these from https://dashboard.clerk.com
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
-CLERK_SECRET_KEY="sk_test_..."
-NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
-NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/dashboard"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/dashboard"
+# Supabase - Get these from https://app.supabase.com
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
 
 # OpenAI - Get from https://platform.openai.com/api-keys
 OPENAI_API_KEY="sk-..."
@@ -91,7 +87,7 @@ Workers will start processing jobs from the queue.
 
 1. Open http://localhost:3000 in your browser
 2. Click "Get Started" or "Sign Up"
-3. Create an account (Clerk handles this)
+3. Create an account (Supabase handles this)
 4. Once logged in, click "Add Brand"
 5. Enter a website URL (e.g., https://stripe.com)
 6. Watch the extraction process in real-time
@@ -121,12 +117,12 @@ brew services start redis  # macOS
 sudo service redis-server start  # Linux
 ```
 
-### Clerk Authentication Issues
+### Supabase Authentication Issues
 
-1. Go to https://dashboard.clerk.com
-2. Check your application settings
-3. Ensure "Development" instance is selected
-4. Add `http://localhost:3000` to allowed origins
+1. Go to https://app.supabase.com
+2. Check your project settings
+3. Ensure authentication is enabled
+4. Add `http://localhost:3000` to allowed redirect URLs in Authentication > URL Configuration
 
 ### Workers Not Processing
 
@@ -228,7 +224,7 @@ docker-compose down      # Stop all services
 
 ## What's Working
 
-✅ User authentication (Clerk)
+✅ User authentication (Supabase)
 ✅ Brand URL submission
 ✅ Async extraction with workers
 ✅ Real-time progress tracking

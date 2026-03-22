@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { createClient } from "@/lib/supabase/server"
 import { prisma } from "@/lib/db"
 
 export async function POST(
@@ -7,9 +7,10 @@ export async function POST(
   { params }: { params: Promise<{ brandId: string }> }
 ) {
   try {
-    const { userId } = await auth()
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    if (!userId) {
+    if (authError || !user) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }

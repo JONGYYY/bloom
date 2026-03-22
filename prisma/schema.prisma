@@ -13,7 +13,7 @@ model User {
   id              String    @id @default(cuid())
   email           String    @unique
   name            String?
-  clerkId         String    @unique
+  authId          String    @unique // Supabase auth.users.id
   themePreference String    @default("dark")
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

@@ -20,7 +20,7 @@ Campaign Generator differentiates from competitors by focusing on:
 - **State**: TanStack Query for server state
 - **Forms**: React Hook Form + Zod validation
 - **Icons**: Lucide React
-- **Auth**: Clerk
+- **Auth**: Supabase
 
 ### Backend
 - **Runtime**: Node.js with Next.js API routes
@@ -39,7 +39,7 @@ Campaign Generator differentiates from competitors by focusing on:
 - PostgreSQL database
 - Redis instance
 - AWS S3 bucket (or compatible storage)
-- Clerk account for authentication
+- Supabase project for authentication
 - OpenAI API key
 
 ### Environment Setup
@@ -59,13 +59,9 @@ DATABASE_URL="postgresql://user:password@localhost:5432/bloom"
 # Redis
 REDIS_URL="redis://localhost:6379"
 
-# Clerk Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
-CLERK_SECRET_KEY="sk_test_..."
-NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
-NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/dashboard"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/dashboard"
+# Supabase Authentication
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
 
 # OpenAI
 OPENAI_API_KEY="sk-..."

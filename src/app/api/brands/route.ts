@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { createClient } from "@/lib/supabase/server"
 import { prisma } from "@/lib/db"
 import { z } from "zod"
 
@@ -9,9 +9,10 @@ const createBrandSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth()
+    const supabase = await createClient()
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
     
-    if (!userId) {
+    if (authError || !authUser) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Get or create user and workspace
     let user = await prisma.user.findUnique({
-      where: { clerkId: userId },
+      where: { authId: authUser.id },
       include: { workspace: true },
     })
 
@@ -36,14 +37,15 @@ export async function POST(request: NextRequest) {
       const workspace = await prisma.workspace.create({
         data: {
           name: "My Workspace",
-          ownerId: userId,
+          ownerId: authUser.id,
         },
       })
 
       user = await prisma.user.create({
         data: {
-          clerkId: userId,
-          email: "user@example.com", // Will be updated from Clerk webhook
+          authId: authUser.id,
+          email: authUser.email || "user@example.com",
+          name: authUser.user_metadata?.name || null,
           workspaceId: workspace.id,
         },
         include: { workspace: true },
@@ -112,9 +114,10 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth()
+    const supabase = await createClient()
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
     
-    if (!userId) {
+    if (authError || !authUser) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -122,7 +125,7 @@ export async function GET(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
+      where: { authId: authUser.id },
     })
 
     if (!user) {

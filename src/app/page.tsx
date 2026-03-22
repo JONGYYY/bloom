@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export default async function LandingPage() {
-  const { userId } = await auth();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   
   // If user is authenticated, redirect to dashboard
-  if (userId) {
+  if (user) {
     redirect("/dashboard");
   }
   
