@@ -10,7 +10,7 @@ export default function BrandsPage() {
           <h1 className="text-3xl font-bold mb-2">Brands</h1>
           <p className="text-mist-300">Manage your brand profiles and campaigns</p>
         </div>
-        <Link href="/app/brands/new">
+        <Link href="/brands/new">
           <Button size="lg">
             <Plus className="w-5 h-5" />
             Add Brand
@@ -25,7 +25,7 @@ export default function BrandsPage() {
           <p className="text-mist-300 mb-6">
             Add your first brand to get started with campaign generation.
           </p>
-          <Link href="/app/brands/new">
+          <Link href="/brands/new">
             <Button>Add your first brand</Button>
           </Link>
         </div>

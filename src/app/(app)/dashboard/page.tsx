@@ -10,7 +10,7 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
           <p className="text-mist-300">Welcome back. Start creating your next campaign.</p>
         </div>
-        <Link href="/app/brands/new">
+        <Link href="/brands/new">
           <Button size="lg">
             <Plus className="w-5 h-5" />
             Add Brand
@@ -28,7 +28,7 @@ export default function DashboardPage() {
           <p className="text-mist-300 mb-6">
             Get started by adding your first brand. We'll analyze your website and extract your brand profile.
           </p>
-          <Link href="/app/brands/new">
+          <Link href="/brands/new">
             <Button>Add your first brand</Button>
           </Link>
         </div>

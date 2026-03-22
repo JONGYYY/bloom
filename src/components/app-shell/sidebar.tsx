@@ -6,9 +6,9 @@ import { Home, Palette, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
-  { name: "Home", href: "/app", icon: Home },
-  { name: "Brands", href: "/app/brands", icon: Palette },
-  { name: "Settings", href: "/app/settings", icon: Settings },
+  { name: "Home", href: "/dashboard", icon: Home },
+  { name: "Brands", href: "/brands", icon: Palette },
+  { name: "Settings", href: "/settings", icon: Settings },
 ]
 
 export function Sidebar() {
@@ -18,7 +18,7 @@ export function Sidebar() {
     <aside className="fixed left-0 top-0 h-screen w-64 glass-panel border-r flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-stroke-subtle">
-        <Link href="/app" className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2">
           <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent">
             Campaign Gen
           </div>
