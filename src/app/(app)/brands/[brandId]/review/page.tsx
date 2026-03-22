@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Stepper, type Step } from "@/components/brand-review/stepper"
-import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 
 // Define the schema for brand profile
@@ -135,10 +134,18 @@ export default function BrandReviewPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto">
-        <div className="glass-panel rounded-lg p-12 text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-violet-500 mx-auto mb-4" />
-          <p className="text-mist-300">Loading brand profile...</p>
+      <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+        <div style={{
+          background: 'rgba(15, 18, 25, 0.6)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '12px',
+          padding: '48px',
+          textAlign: 'center'
+        }}>
+          <Loader2 style={{ width: '48px', height: '48px', color: '#7A6CFF', margin: '0 auto 16px' }} className="animate-spin" />
+          <p style={{ color: '#A8B5CC' }}>Loading brand profile...</p>
         </div>
       </div>
     )
@@ -146,28 +153,50 @@ export default function BrandReviewPage() {
 
   if (!brandProfile) {
     return (
-      <div className="max-w-7xl mx-auto">
-        <div className="glass-panel rounded-lg p-12 text-center">
-          <p className="text-mist-300">Brand profile not found</p>
-          <Button onClick={() => router.push("/brands")} className="mt-4">
+      <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+        <div style={{
+          background: 'rgba(15, 18, 25, 0.6)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '12px',
+          padding: '48px',
+          textAlign: 'center'
+        }}>
+          <p style={{ color: '#A8B5CC' }}>Brand profile not found</p>
+          <button 
+            onClick={() => router.push("/brands")}
+            style={{
+              marginTop: '16px',
+              height: '44px',
+              padding: '0 24px',
+              background: '#7A6CFF',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
+          >
             Back to Brands
-          </Button>
+          </button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Review Your Brand Profile</h1>
-        <p className="text-mist-300">
+    <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '8px', color: '#F3F7FF' }}>Review Your Brand Profile</h1>
+        <p style={{ color: '#A8B5CC' }}>
           Review and edit the detected brand elements before confirming
         </p>
       </div>
 
       {/* Stepper */}
-      <div className="mb-8">
+      <div style={{ marginBottom: '32px' }}>
         <Stepper
           steps={steps}
           currentStep={currentStep}
@@ -180,24 +209,31 @@ export default function BrandReviewPage() {
       </div>
 
       {/* Main content area */}
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Left: Form content */}
-        <div className="lg:col-span-2">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
+        {/* Form content */}
+        <div>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="glass-panel rounded-lg p-8">
+            <div style={{
+              background: 'rgba(15, 18, 25, 0.6)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '32px'
+            }}>
               {/* Step content will go here */}
               {currentStep === 0 && (
                 <div>
-                  <h2 className="text-2xl font-bold mb-4">Overview</h2>
-                  <p className="text-mist-300 mb-6">
+                  <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: '#F3F7FF' }}>Overview</h2>
+                  <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
                     We've analyzed your brand and extracted the following elements.
                     Review each section and make any necessary adjustments.
                   </p>
                   
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                      <h3 className="font-medium mb-2">What's next?</h3>
-                      <ul className="text-sm text-mist-300 space-y-2">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(122, 108, 255, 0.1)', border: '1px solid rgba(122, 108, 255, 0.2)' }}>
+                      <h3 style={{ fontWeight: '500', marginBottom: '8px', color: '#F3F7FF' }}>What's next?</h3>
+                      <ul style={{ fontSize: '14px', color: '#A8B5CC', display: 'flex', flexDirection: 'column', gap: '8px', listStyle: 'none', padding: 0, margin: 0 }}>
                         <li>• Review your color palette</li>
                         <li>• Confirm typography choices</li>
                         <li>• Select your logo</li>
@@ -210,58 +246,53 @@ export default function BrandReviewPage() {
 
               {currentStep === 1 && (
                 <div>
-                  <h2 className="text-2xl font-bold mb-4">Colors</h2>
-                  <p className="text-mist-300 mb-6">
+                  <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: '#F3F7FF' }}>Colors</h2>
+                  <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
                     Review and adjust your brand color palette
                   </p>
-                  {/* Color picker component will go here */}
-                  <div className="text-mist-300">Color palette editor coming soon...</div>
+                  <div style={{ color: '#A8B5CC' }}>Color palette editor coming soon...</div>
                 </div>
               )}
 
               {currentStep === 2 && (
                 <div>
-                  <h2 className="text-2xl font-bold mb-4">Fonts</h2>
-                  <p className="text-mist-300 mb-6">
+                  <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: '#F3F7FF' }}>Fonts</h2>
+                  <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
                     Review your typography choices
                   </p>
-                  {/* Font selector will go here */}
-                  <div className="text-mist-300">Font selector coming soon...</div>
+                  <div style={{ color: '#A8B5CC' }}>Font selector coming soon...</div>
                 </div>
               )}
 
               {currentStep === 3 && (
                 <div>
-                  <h2 className="text-2xl font-bold mb-4">Logos</h2>
-                  <p className="text-mist-300 mb-6">
+                  <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: '#F3F7FF' }}>Logos</h2>
+                  <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
                     Select your primary logo
                   </p>
-                  {/* Logo selector will go here */}
-                  <div className="text-mist-300">Logo selector coming soon...</div>
+                  <div style={{ color: '#A8B5CC' }}>Logo selector coming soon...</div>
                 </div>
               )}
 
               {currentStep === 4 && (
                 <div>
-                  <h2 className="text-2xl font-bold mb-4">Style Traits</h2>
-                  <p className="text-mist-300 mb-6">
+                  <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: '#F3F7FF' }}>Style Traits</h2>
+                  <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
                     Define your brand's visual style
                   </p>
-                  {/* Style trait chips will go here */}
-                  <div className="text-mist-300">Style trait editor coming soon...</div>
+                  <div style={{ color: '#A8B5CC' }}>Style trait editor coming soon...</div>
                 </div>
               )}
 
               {currentStep === 5 && (
                 <div>
-                  <h2 className="text-2xl font-bold mb-4">Final Review</h2>
-                  <p className="text-mist-300 mb-6">
+                  <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: '#F3F7FF' }}>Final Review</h2>
+                  <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
                     Review all your brand elements before confirming
                   </p>
-                  {/* Summary will go here */}
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-lg bg-success-500/10 border border-success-500/20">
-                      <p className="text-sm text-success-500">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(76, 217, 100, 0.1)', border: '1px solid rgba(76, 217, 100, 0.2)' }}>
+                      <p style={{ fontSize: '14px', color: '#4CD964' }}>
                         ✓ Your brand profile is ready to be confirmed
                       </p>
                     </div>
@@ -270,50 +301,77 @@ export default function BrandReviewPage() {
               )}
 
               {/* Navigation buttons */}
-              <div className="flex gap-4 mt-8">
+              <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
                 {currentStep > 0 && (
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
                     onClick={handlePrevious}
+                    style={{
+                      height: '44px',
+                      padding: '0 24px',
+                      background: 'transparent',
+                      color: '#F3F7FF',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer'
+                    }}
                   >
                     Previous
-                  </Button>
+                  </button>
                 )}
                 {currentStep < steps.length - 1 ? (
-                  <Button type="button" onClick={handleNext}>
+                  <button 
+                    type="button" 
+                    onClick={handleNext}
+                    style={{
+                      height: '44px',
+                      padding: '0 24px',
+                      background: '#7A6CFF',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer'
+                    }}
+                  >
                     Next
-                  </Button>
+                  </button>
                 ) : (
-                  <Button type="submit" disabled={isSaving}>
+                  <button 
+                    type="submit" 
+                    disabled={isSaving}
+                    style={{
+                      height: '44px',
+                      padding: '0 24px',
+                      background: '#7A6CFF',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: isSaving ? 'not-allowed' : 'pointer',
+                      opacity: isSaving ? 0.6 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
                     {isSaving ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 style={{ width: '16px', height: '16px' }} className="animate-spin" />
                         Confirming...
                       </>
                     ) : (
                       "Confirm Brand Profile"
                     )}
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>
           </form>
-        </div>
-
-        {/* Right: Live preview */}
-        <div className="lg:col-span-1">
-          <div className="glass-panel rounded-lg p-6 sticky top-6">
-            <h3 className="text-lg font-semibold mb-4">Live Preview</h3>
-            <div className="space-y-4">
-              <div className="aspect-video bg-slate-glass-800/50 rounded-lg flex items-center justify-center">
-                <p className="text-sm text-mist-300">Brand preview</p>
-              </div>
-              <div className="text-sm text-mist-300">
-                See how your brand elements come together
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

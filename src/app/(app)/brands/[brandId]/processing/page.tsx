@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { CheckCircle2, Loader2, XCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
 interface JobStatus {
   id: string
@@ -79,10 +78,18 @@ export default function ProcessingPage() {
 
   if (!job) {
     return (
-      <div className="max-w-3xl mx-auto">
-        <div className="glass-panel rounded-lg p-12 text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-violet-500 mx-auto mb-4" />
-          <p className="text-mist-300">Loading...</p>
+      <div style={{ maxWidth: '768px', margin: '0 auto' }}>
+        <div style={{
+          background: 'rgba(15, 18, 25, 0.6)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '12px',
+          padding: '48px',
+          textAlign: 'center'
+        }}>
+          <Loader2 style={{ width: '48px', height: '48px', color: '#7A6CFF', margin: '0 auto 16px' }} className="animate-spin" />
+          <p style={{ color: '#A8B5CC' }}>Loading...</p>
         </div>
       </div>
     )
@@ -90,20 +97,54 @@ export default function ProcessingPage() {
 
   if (job.status === "failed") {
     return (
-      <div className="max-w-3xl mx-auto">
-        <div className="glass-panel rounded-lg p-12 text-center">
-          <XCircle className="w-12 h-12 text-danger-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Extraction Failed</h2>
-          <p className="text-mist-300 mb-6">
+      <div style={{ maxWidth: '768px', margin: '0 auto' }}>
+        <div style={{
+          background: 'rgba(15, 18, 25, 0.6)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '12px',
+          padding: '48px',
+          textAlign: 'center'
+        }}>
+          <XCircle style={{ width: '48px', height: '48px', color: '#FF6B6B', margin: '0 auto 16px' }} />
+          <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', color: '#F3F7FF' }}>Extraction Failed</h2>
+          <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
             {job.error || "We couldn't extract your brand profile. Please try again."}
           </p>
-          <div className="flex gap-4 justify-center">
-            <Button onClick={() => router.push("/brands/new")}>
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+            <button
+              onClick={() => router.push("/brands/new")}
+              style={{
+                height: '44px',
+                padding: '0 24px',
+                background: '#7A6CFF',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
               Try Another URL
-            </Button>
-            <Button variant="ghost" onClick={() => router.push("/brands")}>
+            </button>
+            <button
+              onClick={() => router.push("/brands")}
+              style={{
+                height: '44px',
+                padding: '0 24px',
+                background: 'transparent',
+                color: '#F3F7FF',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
               Back to Brands
-            </Button>
+            </button>
           </div>
         </div>
       </div>
@@ -111,30 +152,41 @@ export default function ProcessingPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-2">Analyzing Your Brand</h1>
-        <p className="text-mist-300">
+    <div style={{ maxWidth: '768px', margin: '0 auto' }}>
+      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '8px', color: '#F3F7FF' }}>Analyzing Your Brand</h1>
+        <p style={{ color: '#A8B5CC' }}>
           This usually takes 30-60 seconds. We'll redirect you when ready.
         </p>
       </div>
 
-      <div className="glass-panel rounded-lg p-8">
+      <div style={{
+        background: 'rgba(15, 18, 25, 0.6)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: '12px',
+        padding: '32px'
+      }}>
         {/* Progress bar */}
-        <div className="mb-8">
-          <div className="h-2 bg-slate-glass-800 rounded-full overflow-hidden">
+        <div style={{ marginBottom: '32px' }}>
+          <div style={{ height: '8px', background: 'rgba(30, 35, 48, 0.5)', borderRadius: '9999px', overflow: 'hidden' }}>
             <div
-              className="h-full bg-gradient-to-r from-violet-500 to-cyan-500 transition-all duration-500"
-              style={{ width: `${job.progress}%` }}
+              style={{
+                height: '100%',
+                background: 'linear-gradient(to right, #7A6CFF, #3CCBFF)',
+                transition: 'width 0.5s',
+                width: `${job.progress}%`
+              }}
             />
           </div>
-          <div className="mt-2 text-sm text-mist-300 text-center">
+          <div style={{ marginTop: '8px', fontSize: '14px', color: '#A8B5CC', textAlign: 'center' }}>
             {job.progress}% complete
           </div>
         </div>
 
         {/* Stage timeline */}
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {stages.map((stage, index) => {
             const isComplete = index < currentStageIndex
             const isCurrent = index === currentStageIndex
@@ -143,36 +195,48 @@ export default function ProcessingPage() {
             return (
               <div
                 key={stage.id}
-                className={`flex items-start gap-4 p-4 rounded-lg transition-all ${
-                  isCurrent
-                    ? "bg-violet-500/10 border border-violet-500/20"
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '16px',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  transition: 'all 0.3s',
+                  background: isCurrent
+                    ? 'rgba(122, 108, 255, 0.1)'
                     : isComplete
-                    ? "bg-success-500/10 border border-success-500/20"
-                    : "bg-slate-glass-800/30 border border-transparent"
-                }`}
+                    ? 'rgba(76, 217, 100, 0.1)'
+                    : 'rgba(30, 35, 48, 0.3)',
+                  border: isCurrent
+                    ? '1px solid rgba(122, 108, 255, 0.2)'
+                    : isComplete
+                    ? '1px solid rgba(76, 217, 100, 0.2)'
+                    : '1px solid transparent'
+                }}
               >
-                <div className="flex-shrink-0 mt-1">
+                <div style={{ flexShrink: 0, marginTop: '4px' }}>
                   {isComplete ? (
-                    <CheckCircle2 className="w-5 h-5 text-success-500" />
+                    <CheckCircle2 style={{ width: '20px', height: '20px', color: '#4CD964' }} />
                   ) : isCurrent ? (
-                    <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
+                    <Loader2 style={{ width: '20px', height: '20px', color: '#7A6CFF' }} className="animate-spin" />
                   ) : (
-                    <div className="w-5 h-5 rounded-full border-2 border-mist-300/30" />
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(168, 181, 204, 0.3)' }} />
                   )}
                 </div>
-                <div className="flex-1">
+                <div style={{ flex: 1 }}>
                   <h3
-                    className={`font-medium ${
-                      isCurrent
-                        ? "text-violet-500"
+                    style={{
+                      fontWeight: '500',
+                      color: isCurrent
+                        ? '#7A6CFF'
                         : isComplete
-                        ? "text-success-500"
-                        : "text-mist-300"
-                    }`}
+                        ? '#4CD964'
+                        : '#A8B5CC'
+                    }}
                   >
                     {stage.label}
                   </h3>
-                  <p className="text-sm text-mist-300 mt-1">
+                  <p style={{ fontSize: '14px', color: '#A8B5CC', marginTop: '4px' }}>
                     {stage.description}
                   </p>
                 </div>
@@ -182,8 +246,8 @@ export default function ProcessingPage() {
         </div>
 
         {/* Info box */}
-        <div className="mt-8 p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-          <p className="text-sm text-cyan-500">
+        <div style={{ marginTop: '32px', padding: '16px', borderRadius: '12px', background: 'rgba(60, 203, 255, 0.1)', border: '1px solid rgba(60, 203, 255, 0.2)' }}>
+          <p style={{ fontSize: '14px', color: '#3CCBFF' }}>
             💡 We're analyzing your public website to detect colors, fonts, logos, and brand style. 
             You'll review everything before we generate any campaigns.
           </p>
