@@ -39,29 +39,50 @@ function SignInForm() {
 
   return (
     <div className="w-full max-w-md">
-      <div className="glass-panel rounded-lg p-8" style={{
+      <div style={{
         background: 'rgba(28, 35, 49, 0.72)',
         backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
         border: '1px solid rgba(168, 181, 204, 0.2)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+        borderRadius: '12px',
+        padding: '32px'
       }}>
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold mb-2 text-pearl-100">Welcome back</h1>
-          <p className="text-mist-300">Sign in to your account</p>
+        <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+          <h1 style={{ 
+            fontSize: '24px', 
+            fontWeight: 'bold', 
+            marginBottom: '8px',
+            color: '#F3F7FF'
+          }}>Welcome back</h1>
+          <p style={{ color: '#A8B5CC' }}>Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleSignIn} className="space-y-4">
+        <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm text-red-400">
+            <div style={{
+              background: 'rgba(255, 107, 122, 0.1)',
+              border: '1px solid rgba(255, 107, 122, 0.2)',
+              borderRadius: '8px',
+              padding: '12px',
+              fontSize: '14px',
+              color: '#FF6B7A'
+            }}>
               {error}
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2 text-pearl-100">
+            <label htmlFor="email" style={{ 
+              display: 'block', 
+              fontSize: '14px', 
+              fontWeight: '500', 
+              marginBottom: '8px',
+              color: '#F3F7FF'
+            }}>
               Email
             </label>
-            <Input
+            <input
               id="email"
               type="email"
               value={email}
@@ -69,15 +90,30 @@ function SignInForm() {
               placeholder="you@example.com"
               required
               disabled={loading}
-              className="bg-graphite-900 text-pearl-100 border border-stroke-subtle"
+              style={{
+                width: '100%',
+                height: '40px',
+                background: '#121722',
+                color: '#F3F7FF',
+                border: '1px solid rgba(168, 181, 204, 0.2)',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                fontSize: '14px'
+              }}
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-2 text-pearl-100">
+            <label htmlFor="password" style={{ 
+              display: 'block', 
+              fontSize: '14px', 
+              fontWeight: '500', 
+              marginBottom: '8px',
+              color: '#F3F7FF'
+            }}>
               Password
             </label>
-            <Input
+            <input
               id="password"
               type="password"
               value={password}
@@ -85,18 +121,42 @@ function SignInForm() {
               placeholder="••••••••"
               required
               disabled={loading}
-              className="bg-graphite-900 text-pearl-100 border border-stroke-subtle"
+              style={{
+                width: '100%',
+                height: '40px',
+                background: '#121722',
+                color: '#F3F7FF',
+                border: '1px solid rgba(168, 181, 204, 0.2)',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                fontSize: '14px'
+              }}
             />
           </div>
 
-          <Button type="submit" className="w-full bg-violet-500 hover:bg-violet-600 text-white" disabled={loading}>
+          <button 
+            type="submit" 
+            disabled={loading}
+            style={{
+              width: '100%',
+              height: '40px',
+              background: '#7A6CFF',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.5 : 1
+            }}
+          >
             {loading ? "Signing in..." : "Sign in"}
-          </Button>
+          </button>
         </form>
 
-        <div className="mt-6 text-center text-sm">
-          <span className="text-mist-300">Don't have an account? </span>
-          <Link href="/sign-up" className="text-violet-500 hover:text-violet-400 font-medium">
+        <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '14px' }}>
+          <span style={{ color: '#A8B5CC' }}>Don't have an account? </span>
+          <Link href="/sign-up" style={{ color: '#7A6CFF', fontWeight: '500', textDecoration: 'none' }}>
             Sign up
           </Link>
         </div>
