@@ -47,7 +47,7 @@ export default function NewBrandPage() {
       }
 
       const result = await response.json()
-      router.push(`/app/brands/${result.brandId}/processing`)
+      router.push(`/brands/${result.brandId}/processing`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
       setIsSubmitting(false)
@@ -110,7 +110,7 @@ export default function NewBrandPage() {
                 variant="ghost"
                 size="lg"
                 className="w-full"
-                onClick={() => router.push("/app/brands")}
+                onClick={() => router.push("/brands")}
                 disabled={isSubmitting}
               >
                 Cancel

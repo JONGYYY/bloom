@@ -50,7 +50,7 @@ export default function ProcessingPage() {
           if (data.job.status === "completed") {
             clearInterval(intervalId)
             setTimeout(() => {
-              router.push(`/app/brands/${brandId}/review`)
+              router.push(`/brands/${brandId}/review`)
             }, 1000)
           }
 
@@ -98,10 +98,10 @@ export default function ProcessingPage() {
             {job.error || "We couldn't extract your brand profile. Please try again."}
           </p>
           <div className="flex gap-4 justify-center">
-            <Button onClick={() => router.push("/app/brands/new")}>
+            <Button onClick={() => router.push("/brands/new")}>
               Try Another URL
             </Button>
-            <Button variant="ghost" onClick={() => router.push("/app/brands")}>
+            <Button variant="ghost" onClick={() => router.push("/brands")}>
               Back to Brands
             </Button>
           </div>

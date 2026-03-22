@@ -112,7 +112,7 @@ export default function BrandReviewPage() {
       })
 
       if (response.ok) {
-        router.push(`/app/brands/${brandId}`)
+        router.push(`/brands/${brandId}`)
       }
     } catch (error) {
       console.error("Error confirming profile:", error)
@@ -149,7 +149,7 @@ export default function BrandReviewPage() {
       <div className="max-w-7xl mx-auto">
         <div className="glass-panel rounded-lg p-12 text-center">
           <p className="text-mist-300">Brand profile not found</p>
-          <Button onClick={() => router.push("/app/brands")} className="mt-4">
+          <Button onClick={() => router.push("/brands")} className="mt-4">
             Back to Brands
           </Button>
         </div>
