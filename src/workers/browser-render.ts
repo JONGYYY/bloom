@@ -85,6 +85,11 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
     const browser = await getBrowser()
     const page = await browser.newPage()
 
+    // Add __name helper to avoid esbuild/tsx transpilation issues
+    await page.evaluateOnNewDocument(() => {
+      (window as any).__name = (fn: any, name: string) => fn
+    })
+
     // Set user agent
     await page.setUserAgent(
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -105,44 +110,45 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
     })
 
     // Extract DOM structure and computed styles
-    // Using string to avoid tsx transpilation issues
-    const domData = await page.evaluate(`(function() {
-      function getComputedStylesForElement(element) {
-        var styles = window.getComputedStyle(element);
+    const domData = await page.evaluate(() => {
+      const getComputedStylesForElement = (element: Element) => {
+        const styles = window.getComputedStyle(element)
         return {
           fontFamily: styles.fontFamily,
           fontSize: styles.fontSize,
           fontWeight: styles.fontWeight,
           color: styles.color,
-          backgroundColor: styles.backgroundColor
-        };
+          backgroundColor: styles.backgroundColor,
+        }
       }
 
-      var header = document.querySelector('header') || document.querySelector('nav');
-      var headerStyles = header ? getComputedStylesForElement(header) : null;
+      // Get header/nav elements
+      const header = document.querySelector('header') || document.querySelector('nav')
+      const headerStyles = header ? getComputedStylesForElement(header) : null
 
-      var images = Array.from(document.querySelectorAll('img')).map(function(img) {
-        return {
-          src: img.src,
-          alt: img.alt,
-          width: img.width,
-          height: img.height
-        };
-      });
+      // Get all images (potential logos)
+      const images = Array.from(document.querySelectorAll('img')).map(img => ({
+        src: img.src,
+        alt: img.alt,
+        width: img.width,
+        height: img.height,
+      }))
 
-      var bodyStyles = getComputedStylesForElement(document.body);
+      // Get body styles
+      const bodyStyles = getComputedStylesForElement(document.body)
 
-      var h1 = document.querySelector('h1');
-      var headingStyles = h1 ? getComputedStylesForElement(h1) : null;
+      // Get heading styles
+      const h1 = document.querySelector('h1')
+      const headingStyles = h1 ? getComputedStylesForElement(h1) : null
 
       return {
-        headerStyles: headerStyles,
-        bodyStyles: bodyStyles,
-        headingStyles: headingStyles,
-        images: images.slice(0, 10),
-        title: document.title
-      };
-    })()`)
+        headerStyles,
+        bodyStyles,
+        headingStyles,
+        images: images.slice(0, 10), // Limit to first 10 images
+        title: document.title,
+      }
+    })
 
     await page.close()
 
