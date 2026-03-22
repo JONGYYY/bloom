@@ -105,9 +105,9 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
     })
 
     // Extract DOM structure and computed styles
-    const domData = await page.evaluate(() => {
-      function getComputedStylesForElement(element: Element) {
-        const styles = window.getComputedStyle(element)
+    const domData = await page.evaluate(function() {
+      function getComputedStylesForElement(element) {
+        var styles = window.getComputedStyle(element)
         return {
           fontFamily: styles.fontFamily,
           fontSize: styles.fontSize,
@@ -118,11 +118,11 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
       }
 
       // Get header/nav elements
-      const header = document.querySelector('header') || document.querySelector('nav')
-      const headerStyles = header ? getComputedStylesForElement(header) : null
+      var header = document.querySelector('header') || document.querySelector('nav')
+      var headerStyles = header ? getComputedStylesForElement(header) : null
 
       // Get all images (potential logos)
-      const images = Array.from(document.querySelectorAll('img')).map(function(img) {
+      var images = Array.from(document.querySelectorAll('img')).map(function(img) {
         return {
           src: img.src,
           alt: img.alt,
@@ -132,16 +132,16 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
       })
 
       // Get body styles
-      const bodyStyles = getComputedStylesForElement(document.body)
+      var bodyStyles = getComputedStylesForElement(document.body)
 
       // Get heading styles
-      const h1 = document.querySelector('h1')
-      const headingStyles = h1 ? getComputedStylesForElement(h1) : null
+      var h1 = document.querySelector('h1')
+      var headingStyles = h1 ? getComputedStylesForElement(h1) : null
 
       return {
-        headerStyles,
-        bodyStyles,
-        headingStyles,
+        headerStyles: headerStyles,
+        bodyStyles: bodyStyles,
+        headingStyles: headingStyles,
         images: images.slice(0, 10), // Limit to first 10 images
         title: document.title,
       }
