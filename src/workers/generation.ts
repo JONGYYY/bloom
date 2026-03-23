@@ -188,7 +188,7 @@ async function processGenerationJob(job: Job<GenerationJobData>) {
         response_format: 'url',
       })
 
-      if (!response.data[0]?.url) {
+      if (!response.data || !response.data[0]?.url) {
         throw new Error('No image URL returned from DALL-E')
       }
 
@@ -214,7 +214,7 @@ async function processGenerationJob(job: Job<GenerationJobData>) {
             model: 'dall-e-3',
             size: size,
             quality: parameters.quality || 'standard',
-            revisedPrompt: response.data[0].revised_prompt,
+            revisedPrompt: response.data[0]?.revised_prompt || enhancedPrompt,
           },
         },
       })
