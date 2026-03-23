@@ -8,8 +8,8 @@ import { z } from "zod"
 import { Stepper, type Step } from "@/components/studio-review/stepper"
 import { Loader2 } from "lucide-react"
 
-// Define the schema for brand profile
-const brandProfileSchema = z.object({
+// Define the schema for studio profile
+const studioProfileSchema = z.object({
   colors: z.object({
     primary: z.array(z.string()),
     secondary: z.array(z.string()),
@@ -40,7 +40,7 @@ const brandProfileSchema = z.object({
   styleTraits: z.array(z.string()),
 })
 
-type StudioProfileForm = z.infer<typeof brandProfileSchema>
+type StudioProfileForm = z.infer<typeof studioProfileSchema>
 
 const steps: Step[] = [
   { id: "overview", label: "Overview", description: "Studio summary" },
@@ -59,7 +59,7 @@ export default function StudioReviewPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [brandProfile, setStudioProfile] = useState<any>(null)
+  const [studioProfile, setStudioProfile] = useState<any>(null)
 
   const {
     register,
@@ -68,14 +68,14 @@ export default function StudioReviewPage() {
     setValue,
     formState: { errors },
   } = useForm<StudioProfileForm>({
-    resolver: zodResolver(brandProfileSchema),
+    resolver: zodResolver(studioProfileSchema),
   })
 
-  // Fetch brand profile
+  // Fetch studio profile
   useEffect(() => {
     async function fetchStudioProfile() {
       try {
-        const response = await fetch(`/api/brands/${studioId}/profile`)
+        const response = await fetch(`/api/studios/${studioId}/profile`)
         if (response.ok) {
           const data = await response.json()
           setStudioProfile(data.profile)
@@ -89,7 +89,7 @@ export default function StudioReviewPage() {
           }
         }
       } catch (error) {
-        console.error("Error fetching brand profile:", error)
+        console.error("Error fetching studio profile:", error)
       } finally {
         setIsLoading(false)
       }
@@ -102,7 +102,7 @@ export default function StudioReviewPage() {
     setIsSaving(true)
 
     try {
-      const response = await fetch(`/api/brands/${studioId}/profile/confirm`, {
+      const response = await fetch(`/api/studios/${studioId}/profile/confirm`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -111,7 +111,7 @@ export default function StudioReviewPage() {
       })
 
       if (response.ok) {
-        router.push(`/brands/${studioId}`)
+        router.push(`/studios/${studioId}`)
       }
     } catch (error) {
       console.error("Error confirming profile:", error)
@@ -145,13 +145,13 @@ export default function StudioReviewPage() {
           textAlign: 'center'
         }}>
           <Loader2 style={{ width: '48px', height: '48px', color: '#7A6CFF', margin: '0 auto 16px' }} className="animate-spin" />
-          <p style={{ color: '#A8B5CC' }}>Loading brand profile...</p>
+          <p style={{ color: '#A8B5CC' }}>Loading studio profile...</p>
         </div>
       </div>
     )
   }
 
-  if (!brandProfile) {
+  if (!studioProfile) {
     return (
       <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
         <div style={{
@@ -165,7 +165,7 @@ export default function StudioReviewPage() {
         }}>
           <p style={{ color: '#A8B5CC' }}>Studio profile not found</p>
           <button 
-            onClick={() => router.push("/brands")}
+            onClick={() => router.push("/studios")}
             style={{
               marginTop: '16px',
               height: '44px',
@@ -191,7 +191,7 @@ export default function StudioReviewPage() {
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '8px', color: '#F3F7FF' }}>Review Your Studio Profile</h1>
         <p style={{ color: '#A8B5CC' }}>
-          Review and edit the detected brand elements before confirming
+          Review and edit the detected studio elements before confirming
         </p>
       </div>
 
@@ -226,7 +226,7 @@ export default function StudioReviewPage() {
                 <div>
                   <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: '#F3F7FF' }}>Overview</h2>
                   <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
-                    We've analyzed your brand and extracted the following elements.
+                    We've analyzed your studio and extracted the following elements.
                     Review each section and make any necessary adjustments.
                   </p>
                   
@@ -237,7 +237,7 @@ export default function StudioReviewPage() {
                         <li>• Review your color palette</li>
                         <li>• Confirm typography choices</li>
                         <li>• Select your logo</li>
-                        <li>• Define brand style traits</li>
+                        <li>• Define studio style traits</li>
                       </ul>
                     </div>
                   </div>
@@ -248,7 +248,7 @@ export default function StudioReviewPage() {
                 <div>
                   <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: '#F3F7FF' }}>Colors</h2>
                   <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
-                    Review and adjust your brand color palette
+                    Review and adjust your studio color palette
                   </p>
                   <div style={{ color: '#A8B5CC' }}>Color palette editor coming soon...</div>
                 </div>
@@ -278,7 +278,7 @@ export default function StudioReviewPage() {
                 <div>
                   <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: '#F3F7FF' }}>Style Traits</h2>
                   <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
-                    Define your brand's visual style
+                    Define your studio's visual style
                   </p>
                   <div style={{ color: '#A8B5CC' }}>Style trait editor coming soon...</div>
                 </div>
@@ -288,12 +288,12 @@ export default function StudioReviewPage() {
                 <div>
                   <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: '#F3F7FF' }}>Final Review</h2>
                   <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
-                    Review all your brand elements before confirming
+                    Review all your studio elements before confirming
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(76, 217, 100, 0.1)', border: '1px solid rgba(76, 217, 100, 0.2)' }}>
                       <p style={{ fontSize: '14px', color: '#4CD964' }}>
-                        ✓ Your brand profile is ready to be confirmed
+                        ✓ Your studio profile is ready to be confirmed
                       </p>
                     </div>
                   </div>
