@@ -122,6 +122,20 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
 
     // Extract DOM structure and computed styles
     const domData = await page.evaluate(() => {
+      const rgbToHex = (rgb: string): string => {
+        const match = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/)
+        if (!match) return rgb
+        
+        const r = parseInt(match[1])
+        const g = parseInt(match[2])
+        const b = parseInt(match[3])
+        
+        return '#' + [r, g, b].map(x => {
+          const hex = x.toString(16)
+          return hex.length === 1 ? '0' + hex : hex
+        }).join('').toUpperCase()
+      }
+
       const getComputedStylesForElement = (element: Element) => {
         const styles = window.getComputedStyle(element)
         return {
@@ -131,6 +145,43 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
           color: styles.color,
           backgroundColor: styles.backgroundColor,
         }
+      }
+
+      // Extract all colors from the page
+      const extractColors = () => {
+        const colorMap = new Map<string, number>()
+        const elements = document.querySelectorAll('*')
+        
+        elements.forEach(el => {
+          const styles = window.getComputedStyle(el)
+          
+          // Get background color
+          const bgColor = styles.backgroundColor
+          if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+            const hex = rgbToHex(bgColor)
+            colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
+          }
+          
+          // Get text color
+          const textColor = styles.color
+          if (textColor) {
+            const hex = rgbToHex(textColor)
+            colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
+          }
+          
+          // Get border colors
+          const borderColor = styles.borderColor
+          if (borderColor && borderColor !== 'rgba(0, 0, 0, 0)' && borderColor !== 'transparent') {
+            const hex = rgbToHex(borderColor)
+            colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
+          }
+        })
+        
+        // Convert to array and sort by frequency
+        return Array.from(colorMap.entries())
+          .sort((a, b) => b[1] - a[1])
+          .map(([color, count]) => ({ color, count }))
+          .slice(0, 20) // Top 20 most frequent colors
       }
 
       // Get header/nav elements
@@ -152,10 +203,17 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
       const h1 = document.querySelector('h1')
       const headingStyles = h1 ? getComputedStylesForElement(h1) : null
 
+      // Get button styles (often contain accent colors)
+      const buttons = Array.from(document.querySelectorAll('button, a[class*="button"], a[class*="btn"]'))
+        .slice(0, 5)
+        .map(btn => getComputedStylesForElement(btn))
+
       return {
         headerStyles,
         bodyStyles,
         headingStyles,
+        buttonStyles: buttons,
+        extractedColors: extractColors(),
         images: images.slice(0, 10), // Limit to first 10 images
         title: document.title,
       }

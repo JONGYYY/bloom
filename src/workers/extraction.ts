@@ -36,48 +36,65 @@ async function processExtractionJob(job: Job<ExtractionJobData>) {
       `${idx + 1}. ${img.src} (alt: "${img.alt}", ${img.width}x${img.height})`
     ).join('\n') || 'No images found'
 
+    const colorList = domData.extractedColors?.map((c: any, idx: number) => 
+      `${c.color} (used ${c.count} times)`
+    ).join('\n') || 'No colors extracted'
+
     const prompt = `Analyze this brand website screenshot and extract the following brand elements:
 
-1. Color Palette:
-   - Identify 2-3 primary colors (most dominant brand colors)
-   - Identify 2-3 secondary colors (supporting colors)
-   - Identify 1-2 accent colors (call-to-action, highlights)
-   - Provide confidence level (high/medium/low) for each color group
-   - Return colors as hex codes (e.g., "#FF5733")
+1. Color Palette - IMPORTANT INSTRUCTIONS:
+   Below is a list of colors extracted from the page's CSS, sorted by frequency.
+   Your task is to:
+   - Select the most DISTINCTIVE and BRAND-DEFINING colors from this list
+   - DEDUPLICATE similar colors: Group colors that are within 10-15% similarity (e.g., #FF90E8 and #FF88E5 are too similar, pick one)
+   - Exclude pure black (#000000, #000), pure white (#FFFFFF, #FFF), and neutral grays (#F5F5F5, #CCCCCC, #E5E5E5, etc.) UNLESS they are clearly a key brand color
+   - Focus on colors that appear frequently AND are visually distinctive
+   - Aim for 4-8 TOTAL unique colors across all categories
+   
+   Extracted colors from page (sorted by frequency):
+${colorList}
+   
+   Categorize the selected colors as:
+   - PRIMARY (2-4 colors): The most dominant, frequently used brand colors that define brand identity
+   - SECONDARY (1-3 colors): Supporting colors used for sections, backgrounds, or secondary elements  
+   - ACCENT (1-2 colors): High-contrast colors used for CTAs, highlights, or important actions
+   
+   Return EXACT hex codes from the list above (e.g., "#FF90E8").
+   Provide confidence level (high/medium/low) based on frequency and visual prominence in the screenshot.
 
 2. Typography:
-   - Identify the heading font family and weight
-   - Identify the body text font family and weight
+   - Identify the heading font family and weight (from the largest, most prominent headings)
+   - Identify the body text font family and weight (from paragraph text)
+   - Use the font family names from the DOM data provided below
    - Provide confidence level for each
 
 3. Logo Candidates:
    - From the images list below, identify which ones are likely brand logos
    - Return the exact URL from the list
    - Rank by confidence (high/medium/low)
-   - Typically logos are in the header/nav area and are relatively small
+   - Logos are typically in the header/nav area, relatively small (under 200px), and contain brand identity
+   - Include up to 3 most likely logo candidates
 
 Images found on page:
 ${imageList}
 
 4. Style Traits:
-   - Select applicable traits from: minimal, premium, playful, bold, editorial, soft, sporty, luxe
-   - Explain reasoning for each trait
-
-5. Provenance:
-   - Explain how each value was derived
+   - Select 2-4 applicable traits from: minimal, premium, playful, bold, editorial, soft, sporty, luxe
+   - Base this on: layout density, color vibrancy, typography style, spacing, visual complexity
 
 Additional context from DOM:
 - Title: ${domData.title}
 - Header styles: ${JSON.stringify(domData.headerStyles)}
 - Body styles: ${JSON.stringify(domData.bodyStyles)}
 - Heading styles: ${JSON.stringify(domData.headingStyles)}
+- Button styles: ${JSON.stringify(domData.buttonStyles)}
 
-Return a JSON object with this structure:
+Return a JSON object with this EXACT structure:
 {
   "colors": {
-    "primary": ["#hex1", "#hex2"],
-    "secondary": ["#hex3", "#hex4"],
-    "accent": ["#hex5"],
+    "primary": ["#HEX1", "#HEX2"],
+    "secondary": ["#HEX3"],
+    "accent": ["#HEX4"],
     "confidence": "high" | "medium" | "low"
   },
   "fonts": {
@@ -98,12 +115,12 @@ Return a JSON object with this structure:
     ],
     "selected": null
   },
-  "styleTraits": ["minimal", "premium"],
+  "styleTraits": ["trait1", "trait2"],
   "provenance": {
-    "colors": "Detected from header, buttons, and prominent UI elements",
-    "fonts": "Extracted from computed styles of headings and body text",
-    "logos": "Identified from header/nav images",
-    "styleTraits": "Based on layout, spacing, and visual aesthetic"
+    "colors": "Explain which page areas these colors were found in",
+    "fonts": "Explain where these fonts were detected",
+    "logos": "Explain why these images were identified as logos",
+    "styleTraits": "Explain the reasoning for selected traits"
   }
 }`
 
