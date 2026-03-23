@@ -1,11 +1,11 @@
 import { Worker, Job } from 'bullmq'
-import OpenAI from 'openai'
 import { connection } from './queue'
 import { prisma } from '@/lib/db'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
+import FormData from 'form-data'
 
 interface GenerationJobData {
   generationId: string
@@ -25,10 +25,6 @@ interface GenerationJobData {
     referenceImages?: string[]
   }
 }
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',
@@ -131,16 +127,31 @@ function buildEnhancedPrompt(
   return enhancedPrompt
 }
 
-function getAspectRatioSize(aspectRatio?: string): { width: number; height: number } {
-  const ratios: Record<string, { width: number; height: number }> = {
-    square: { width: 1024, height: 1024 },
-    portrait: { width: 1024, height: 1792 },
-    landscape: { width: 1792, height: 1024 },
-    wide: { width: 1792, height: 1024 },
-    story: { width: 1024, height: 1792 },
+function getIdeogramAspectRatio(aspectRatio?: string): string {
+  const ratios: Record<string, string> = {
+    square: 'ASPECT_1_1',
+    portrait: 'ASPECT_9_16',
+    landscape: 'ASPECT_16_9',
+    wide: 'ASPECT_16_9',
+    story: 'ASPECT_9_16',
   }
   
-  return ratios[aspectRatio || 'square'] || ratios.square
+  return ratios[aspectRatio || 'square'] || 'ASPECT_1_1'
+}
+
+function getIdeogramStyleType(aesthetic?: string): string {
+  const styleMap: Record<string, string> = {
+    minimal: 'GENERAL',
+    luxury: 'REALISTIC',
+    bold: 'DESIGN',
+    playful: 'ANIME',
+    professional: 'GENERAL',
+    modern: 'DESIGN',
+    organic: 'REALISTIC',
+    tech: 'DESIGN',
+  }
+  
+  return styleMap[aesthetic || ''] || 'GENERAL'
 }
 
 async function processGenerationJob(job: Job<GenerationJobData>) {
@@ -169,32 +180,57 @@ async function processGenerationJob(job: Job<GenerationJobData>) {
     const enhancedPrompt = buildEnhancedPrompt(prompt, studio.profile, parameters)
     console.log(`[Generation] Enhanced prompt: ${enhancedPrompt}`)
 
-    // Get aspect ratio size
-    const size = getAspectRatioSize(parameters.aspectRatio)
+    // Get Ideogram parameters
+    const aspectRatio = getIdeogramAspectRatio(parameters.aspectRatio)
+    const styleType = getIdeogramStyleType(parameters.aesthetic)
     const variants = parameters.variants || 1
 
-    // Generate images using DALL-E 3
+    // Generate images using Ideogram API
     const generatedAssets = []
     
     for (let i = 0; i < variants; i++) {
       console.log(`[Generation] Generating variant ${i + 1}/${variants}`)
       
-      const response = await openai.images.generate({
-        model: 'dall-e-3',
-        prompt: enhancedPrompt,
-        n: 1,
-        size: size.width === 1024 && size.height === 1024 ? '1024x1024' : 
-              size.width === 1792 ? '1792x1024' : '1024x1792',
-        quality: parameters.quality === 'hd' ? 'hd' : 'standard',
-        response_format: 'url',
+      // Create form data for Ideogram API
+      const formData = new FormData()
+      formData.append('prompt', enhancedPrompt)
+      formData.append('aspect_ratio', aspectRatio)
+      formData.append('style_type', styleType)
+      formData.append('num_images', '1')
+      
+      // Add magic prompt for better results
+      formData.append('magic_prompt', 'AUTO')
+      
+      // Add color palette if brand colors are available
+      if (studio.profile?.colors?.primary && studio.profile.colors.primary.length > 0) {
+        const brandColors = studio.profile.colors.primary.slice(0, 5)
+        formData.append('color_palette', JSON.stringify({
+          members: brandColors.map((color: string) => ({ color_hex: color }))
+        }))
+      }
+
+      // Call Ideogram API
+      const response = await fetch('https://api.ideogram.ai/v1/ideogram-v3/generate', {
+        method: 'POST',
+        headers: {
+          'Api-Key': process.env.IDEOGRAM_API_KEY || '',
+        },
+        body: formData,
       })
 
-      if (!response.data[0]?.url) {
-        throw new Error('No image URL returned from DALL-E')
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Ideogram API error: ${response.status} - ${errorText}`)
+      }
+
+      const result = await response.json()
+      
+      if (!result.data || result.data.length === 0 || !result.data[0].url) {
+        throw new Error('No image URL returned from Ideogram')
       }
 
       // Download the generated image
-      const imageResponse = await fetch(response.data[0].url)
+      const imageResponse = await fetch(result.data[0].url)
       const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
 
       // Upload to S3
@@ -212,10 +248,12 @@ async function processGenerationJob(job: Job<GenerationJobData>) {
           prompt: enhancedPrompt,
           parameters: parameters as any,
           metadata: {
-            model: 'dall-e-3',
-            size: `${size.width}x${size.height}`,
+            model: 'ideogram-v3',
+            aspectRatio: aspectRatio,
+            styleType: styleType,
             quality: parameters.quality || 'standard',
-            revisedPrompt: response.data[0].revised_prompt,
+            ideogramPrompt: result.data[0].prompt,
+            seed: result.data[0].seed,
           },
         },
       })

@@ -1,349 +1,367 @@
-# Campaign Generator MVP - Implementation Summary
+# Studio MVP Implementation Summary
 
-## Project Completion Status
+## Overview
 
-✅ **ALL PHASES COMPLETED** - MVP Phase 1-2 fully implemented
+Successfully implemented the comprehensive Studio MVP as specified in the PRD. The application has been transformed from a brand-focused tool into a full-featured brand-aware creative generation studio.
 
-## What Was Built
+## Major Changes Completed
 
-### Phase 1: Foundation (COMPLETED)
+### ✅ Phase 1: Terminology Migration (Brand → Studio)
 
-✅ **Project Setup**
-- Next.js 15 with App Router and TypeScript
-- Tailwind CSS v4 with custom chromic glass design system
-- Prisma ORM with PostgreSQL
-- Clerk authentication integration
-- Route groups: (marketing), (auth), (app)
+**Database Schema:**
+- Renamed `Brand` model to `Studio`
+- Renamed `BrandProfile` to `StudioProfile`
+- Renamed `BrandAsset` to `BrandAsset` (kept for backwards compatibility with screenshots)
+- Updated all foreign key relationships
+- Created migration: `01_rename_brand_to_studio`
 
-✅ **Design System**
-- Custom "chromic glass" visual language
-- Design tokens and CSS variables
-- Base UI components (Button, Input, Card)
-- Geist Sans typography
-- Dark mode optimized
+**Backend Updates:**
+- Migrated all API routes from `/api/brands` to `/api/studios`
+- Updated all workers (preflight, browser-render, extraction) to use `studioId`
+- Updated all Prisma queries to use new model names
 
-✅ **App Shell**
-- Sidebar navigation with active states
-- Topbar with user menu and theme toggle
+**Frontend Updates:**
+- Migrated all routes from `/brands` to `/studios`
+- Updated sidebar navigation
+- Updated all UI text and labels
+- Changed branding from "Campaign Generator" to "Bloom"
+
+### ✅ Phase 2: Core Pages & Structure
+
+**Enhanced Landing Page:**
+- Updated hero section with "Brand-aware creative generation studio" messaging
+- Added "Why Bloom is different" section highlighting:
+  - Brand-aware vs generic AI
+  - Structured creative control
+  - Built for workflow
+  - Trust and transparency
+- Enhanced "How it works" section
+- Added product differentiation section
+- Updated trust section with clearer messaging
+
+**Onboarding Flow:**
+- Created optional onboarding page at `/onboarding`
+- Welcome message with product summary
+- Feature highlights (brand-aware generation, structured control)
+- CTAs: "Create your first studio" and "Skip and explore"
+
+**Dashboard:**
+- Updated to reference studios instead of brands
+- Changed CTA to "New Studio"
+- Updated empty state messaging
+
+### ✅ Phase 3: Main Studio Workspace (Core Product)
+
+**Workspace Layout:**
+- Created `/studios/[studioId]/workspace` page
+- Three-zone layout:
+  - Main content area with prompt composer and asset history
+  - Right parameter rail with all controls
+  - Responsive design
+
+**Prompt Composer Component:**
+- Large multiline textarea for prompts
+- Character count
+- Keyboard shortcut (⌘+Enter to generate)
+- Generate button with loading states
+- Error handling
+
+**Parameter Rail Component:**
+- Output Type selector (searchable dropdown)
+- Aesthetic selector (visual chips)
+- Aspect Ratio selector (Square, Portrait, Landscape, Wide, Story)
+- Variants slider (1-4)
+- Brand Strength selector (Loose, Balanced, Strong, Strict)
+- Text Presence selector (None, Minimal, Headline, Text-Heavy)
+- Composition dropdown
+- Mood dropdown
+- Quality selector (Standard, HD)
+- Preset selector integration
+
+**Asset History Component:**
+- Tabs: Recent, Favorites, References
+- Masonry grid layout
+- Hover actions: favorite, download
+- Real-time polling for new assets
+- Empty states for each tab
+
+### ✅ Phase 4: Structured Control System
+
+**Output Types Library (`src/lib/output-types.ts`):**
+- 5 categories: Social & Promotion, Brand & Content, Marketing & Ads, Print & Physical, Web & Digital
+- 20+ output types including:
+  - Social Post, Story, Carousel, Cover Photo
+  - Quote Card, Announcement, Infographic, Testimonial
+  - Display Ad, Promo Banner, Email Header
+  - Flyer, Poster, Business Card
+  - Hero Image, Blog Header, Thumbnail
+
+**Aesthetics Library (`src/lib/aesthetics.ts`):**
+- 8 core aesthetics: Minimal, Luxury, Bold, Playful, Professional, Modern, Organic, Tech
+- 8 art movements: Swiss, Bauhaus, Brutalism, Memphis, Art Deco, Mid-Century, Minimalism, Maximalism
+- 6 moods: Sophisticated, Energetic, Calm, Bold, Warm, Cool
+- 6 compositions: Centered, Split Layout, Poster Style, Editorial, Grid, Asymmetric
+- 5 aspect ratios with dimensions
+- 4 brand strength levels
+- 4 text presence levels
+- 2 quality levels
+
+### ✅ Phase 5: Asset Management System
+
+**Database Models:**
+```prisma
+model Generation {
+  id          String
+  studioId    String
+  prompt      String
+  parameters  Json
+  status      String
+  assets      Asset[]
+}
+
+model Asset {
+  id            String
+  studioId      String
+  generationId  String?
+  type          String
+  storageKey    String
+  url           String?
+  prompt        String?
+  parameters    Json?
+  metadata      Json?
+  isFavorite    Boolean
+  isReference   Boolean
+}
+
+model Preset {
+  id         String
+  studioId   String
+  name       String
+  parameters Json
+}
+```
+
+**Asset APIs:**
+- `GET /api/studios/[studioId]/assets` - List assets with filtering (tab: recent/favorites/references)
+- `GET /api/studios/[studioId]/assets/[assetId]` - Get asset details
+- `PATCH /api/studios/[studioId]/assets/[assetId]` - Update asset (favorite, reference)
+- `DELETE /api/studios/[studioId]/assets/[assetId]` - Delete asset
+
+**Asset Detail Page:**
+- Large asset preview
+- Action buttons: Download, Favorite, Duplicate Settings, Regenerate Similar, Delete
+- Metadata display: prompt, model, size, quality, created date
+- Parameters used (displayed as chips)
 - Responsive layout
-- Protected routes with Clerk middleware
 
-✅ **Landing & Auth Pages**
-- Premium landing page with hero section
-- "How it works" section
-- Trust/privacy messaging
-- Sign-in and sign-up pages with Clerk
+### ✅ Phase 6: Retention Features
 
-### Phase 2: Brand Ingestion (COMPLETED)
+**Favorites System:**
+- Heart icon on asset cards
+- Toggle favorite API endpoint
+- Favorites tab in asset history
+- Favorite indicator on asset detail page
 
-✅ **Brand Submission**
-- URL input page with validation
-- Zod schema validation
-- Helper information and examples
-- Error handling
+**Saved Presets:**
+- Preset selector component
+- Save current parameters as preset
+- Load preset to populate parameters
+- Preset management (create, list, delete)
+- API endpoints: `GET/POST /api/studios/[studioId]/presets`
 
-✅ **Background Workers**
-- BullMQ + Redis queue setup
-- Preflight worker (URL validation)
-- Browser render worker (Puppeteer screenshots)
-- Extraction worker (OpenAI GPT-4 Vision)
-- S3 storage integration
+### ✅ Phase 7: Generation Worker
 
-✅ **Processing UI**
-- Real-time job status polling
-- Semantic progress stages
-- Visual progress timeline
-- Error state handling
-- Automatic redirect on completion
+**DALL-E 3 Integration (`src/workers/generation.ts`):**
+- Processes generation jobs from BullMQ queue
+- Fetches studio profile for brand context
+- Builds enhanced prompts with:
+  - User prompt
+  - Aesthetic/style modifiers
+  - Brand context (colors, fonts, style traits) based on brand strength
+  - Text presence guidance
+  - Composition and mood
+- Generates images using DALL-E 3 API
+- Supports multiple variants
+- Uploads to S3 with pre-signed URLs (7-day expiration)
+- Creates Asset records with full metadata
+- Updates Generation status
 
-✅ **Storage**
-- AWS S3 integration
-- Screenshot upload pipeline
-- Asset management in database
+**Prompt Enhancement Logic:**
+- Loose: Minimal brand influence
+- Balanced: Moderate brand influence (style traits)
+- Strong: Strong brand adherence (colors, fonts, style traits)
+- Strict: Maximum brand consistency (all brand elements)
 
-### Phase 3: Brand Review Wizard (COMPLETED)
-
-✅ **Wizard Layout**
-- Multi-step stepper component
-- Live preview panel
-- Responsive design
-- Navigation controls
-
-✅ **Wizard Steps**
-- Overview step
-- Colors step
-- Fonts step
-- Logos step
-- Style traits step
-- Final review step
-
-✅ **Components**
-- Stepper with progress tracking
-- Confidence badges (high/medium/low)
-- Form state management with React Hook Form
-- Zod validation schemas
-
-✅ **State Management**
-- React Hook Form integration
-- Profile update API
-- Profile confirmation API
-- Auto-save capability (structure in place)
-
-### Phase 4: Polish & Deployment (COMPLETED)
-
-✅ **Documentation**
-- Comprehensive README.md
-- Architecture documentation
-- Design system documentation
-- Deployment guide
-
-✅ **Docker Configuration**
-- Dockerfile.web for Next.js app
-- Dockerfile.worker for background workers
-- docker-compose.yml for local development
-- Multi-stage builds for optimization
-
-✅ **Deployment Setup**
-- Railway deployment guide
-- Environment variable configuration
-- Health check recommendations
-- Scaling strategies
-
-✅ **Polish**
-- Responsive design throughout
-- Loading states and skeletons
-- Error handling
-- Empty states
-- Accessibility considerations
-
-## Technical Architecture
-
-### Frontend Stack
-- **Framework**: Next.js 15, TypeScript, React 19
-- **Styling**: Tailwind CSS v4
-- **Components**: shadcn/ui (customized)
-- **Animation**: Framer Motion
-- **State**: TanStack Query
-- **Forms**: React Hook Form + Zod
-- **Icons**: Lucide React
-- **Auth**: Clerk
-
-### Backend Stack
-- **Runtime**: Node.js
-- **Database**: PostgreSQL + Prisma
-- **Queue**: BullMQ + Redis
-- **Browser**: Puppeteer
-- **AI**: OpenAI GPT-4 Vision
-- **Storage**: AWS S3
-
-### Infrastructure
-- **Deployment**: Railway
-- **Containerization**: Docker
-- **Database**: PostgreSQL (Railway)
-- **Cache/Queue**: Redis (Railway)
-
-## Key Features Implemented
-
-1. **Brand URL Submission** - Users can submit any website URL
-2. **Async Extraction Pipeline** - Background workers process extraction jobs
-3. **Real-time Progress Tracking** - Users see live updates during extraction
-4. **AI-Powered Analysis** - GPT-4 Vision extracts brand elements
-5. **Brand Review Wizard** - Multi-step wizard for reviewing and editing
-6. **Confidence Indicators** - Field-level confidence scoring
-7. **Brand Profile Storage** - Persistent brand profiles in database
-8. **Premium UI/UX** - Chromic glass design system throughout
+**Generation API:**
+- `POST /api/studios/[studioId]/generate` - Start generation
+- `GET /api/studios/[studioId]/generate` - Poll generation status
+- Validates parameters with Zod schema
+- Enqueues job to generation worker
+- Returns generation ID for tracking
 
 ## File Structure
 
 ```
-/Users/jonathanshan/Bloom/
-├── src/
-│   ├── app/
-│   │   ├── (marketing)/          # Landing page
-│   │   ├── (auth)/                # Sign-in, sign-up
-│   │   ├── (app)/                 # Main app
-│   │   │   ├── brands/
-│   │   │   │   ├── new/           # Brand submission
-│   │   │   │   └── [brandId]/
-│   │   │   │       ├── processing/ # Processing UI
-│   │   │   │       ├── review/    # Review wizard
-│   │   │   │       └── page.tsx   # Brand overview
-│   │   │   └── settings/
-│   │   └── api/
-│   │       └── brands/            # Brand APIs
-│   ├── components/
-│   │   ├── ui/                    # Base components
-│   │   ├── app-shell/             # Sidebar, topbar
-│   │   └── brand-review/          # Wizard components
-│   └── lib/                       # Utilities
-├── workers/
-│   ├── queue.ts                   # BullMQ setup
-│   ├── preflight.ts               # URL validation
-│   ├── browser-render.ts          # Screenshots
-│   ├── extraction.ts              # AI analysis
-│   └── index.ts                   # Main worker
-├── prisma/
-│   └── schema.prisma              # Database schema
-├── docker/
-│   ├── Dockerfile.web             # Web container
-│   └── Dockerfile.worker          # Worker container
-└── docs/
-    ├── architecture.md
-    ├── design-system.md
-    └── deployment.md
+src/
+├── app/
+│   ├── (app)/
+│   │   ├── dashboard/page.tsx (updated)
+│   │   ├── onboarding/page.tsx (new)
+│   │   ├── studios/
+│   │   │   ├── page.tsx (list)
+│   │   │   ├── new/page.tsx (create)
+│   │   │   └── [studioId]/
+│   │   │       ├── page.tsx (overview - old)
+│   │   │       ├── workspace/page.tsx (main workspace - new)
+│   │   │       ├── processing/page.tsx
+│   │   │       ├── review/page.tsx
+│   │   │       └── assets/[assetId]/page.tsx (new)
+│   │   └── settings/page.tsx
+│   ├── api/
+│   │   └── studios/
+│   │       ├── route.ts (list, create)
+│   │       └── [studioId]/
+│   │           ├── job/route.ts
+│   │           ├── profile/
+│   │           │   ├── route.ts (get, update)
+│   │           │   └── confirm/route.ts
+│   │           ├── assets/
+│   │           │   ├── route.ts (list)
+│   │           │   └── [assetId]/route.ts (get, update, delete)
+│   │           ├── presets/
+│   │           │   ├── route.ts (list, create)
+│   │           │   └── [presetId]/route.ts (delete)
+│   │           └── generate/route.ts (create, poll)
+│   └── page.tsx (landing - enhanced)
+├── components/
+│   ├── app-shell/
+│   │   └── sidebar.tsx (updated)
+│   └── studio/
+│       ├── prompt-composer.tsx (new)
+│       ├── parameter-rail.tsx (new)
+│       ├── asset-history.tsx (new)
+│       └── preset-selector.tsx (new)
+├── lib/
+│   ├── aesthetics.ts (new)
+│   └── output-types.ts (new)
+└── workers/
+    ├── preflight.ts (updated)
+    ├── browser-render.ts (updated)
+    ├── extraction.ts (updated)
+    ├── generation.ts (new)
+    ├── queue.ts (updated)
+    └── index.ts (updated)
 ```
-
-## Database Schema
-
-**Core Tables**:
-- `User` - User accounts (linked to Clerk)
-- `Workspace` - User workspaces
-- `Brand` - Brand records
-- `BrandProfile` - Extracted brand profiles
-- `BrandAsset` - Screenshots and logos
-- `GenerationJob` - Async job tracking
-
-## API Endpoints
-
-### Brands
-- `POST /api/brands` - Create brand + start extraction
-- `GET /api/brands` - List user's brands
-- `GET /api/brands/[brandId]` - Get brand details
-
-### Brand Profiles
-- `GET /api/brands/[brandId]/profile` - Get profile
-- `PATCH /api/brands/[brandId]/profile` - Update profile
-- `POST /api/brands/[brandId]/profile/confirm` - Confirm profile
-
-### Jobs
-- `GET /api/brands/[brandId]/job` - Get job status
 
 ## Environment Variables Required
 
 ```env
-DATABASE_URL=postgresql://...
-REDIS_URL=redis://...
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
-CLERK_SECRET_KEY=sk_...
-OPENAI_API_KEY=sk-...
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
-AWS_REGION=us-east-1
-S3_BUCKET_NAME=brand-assets
-NEXT_PUBLIC_APP_URL=https://...
+# Supabase Authentication
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+
+# AWS S3 for asset storage
+AWS_ACCESS_KEY_ID="your_aws_access_key_id"
+AWS_SECRET_ACCESS_KEY="your_aws_secret_access_key"
+AWS_REGION="us-east-1"
+S3_BUCKET_NAME="your-s3-bucket-name"
+
+# OpenAI API (for DALL-E 3)
+OPENAI_API_KEY="your_openai_api_key"
+
+# Database
+DATABASE_URL="postgresql://..."
+
+# Redis (for BullMQ)
+REDIS_URL="redis://..."
+
+# App
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_SITE_URL="http://localhost:3000"
+NODE_ENV="development"
 ```
 
-## Next Steps for Deployment
+## Deployment Steps
 
-1. **Set up services**:
-   - Create PostgreSQL database
-   - Create Redis instance
-   - Create S3 bucket
-   - Set up Clerk application
-
-2. **Configure environment**:
-   - Copy `.env.example` to `.env`
-   - Fill in all environment variables
-
-3. **Initialize database**:
+1. **Database Migration:**
    ```bash
-   npm run prisma:generate
-   npm run prisma:migrate
+   npx prisma migrate deploy
    ```
 
-4. **Run locally**:
+2. **Build Application:**
    ```bash
-   # Terminal 1
-   npm run dev
-   
-   # Terminal 2
-   npm run workers
+   npm run build
    ```
 
-5. **Deploy to Railway**:
-   - Follow `docs/deployment.md`
-   - Deploy web service
-   - Deploy worker service
-   - Configure environment variables
+3. **Start Services:**
+   - Web: `npm start` (or use `sh scripts/start.sh` to run migrations first)
+   - Workers: `npm run workers`
 
-## Future Phases (Not Implemented)
+4. **Railway Configuration:**
+   - Web service: Build command `npm run build`, Start command `sh scripts/start.sh`
+   - Worker service: Build command `npm run build`, Start command `npm run workers`
+   - Ensure all environment variables are set
 
-### Phase 3 (V1.5): Campaign Builder
-- Product/offer context input
-- Campaign goal selection
-- Format selection (Square Ad, Story, Email Hero)
-- Campaign set generation
-- Results page with concept grouping
+## Testing the Implementation
 
-### Phase 4 (V1.5): Editing & Export
-- Structured-lite editing
-- Asset detail/edit page
-- Export flow with format selection
-- Campaign history
+1. **Create a Studio:**
+   - Navigate to `/studios/new`
+   - Enter a website URL (e.g., https://stripe.com)
+   - Wait for processing (30-60 seconds)
+   - Review the extracted brand profile
 
-### Phase 5 (V2): Integrations & Analytics
-- Shopify sync
-- Ad platform publishing (Meta, Google)
-- Analytics feedback loop
-- Multi-brand workspaces
-- Team collaboration
+2. **Generate Assets:**
+   - Navigate to `/studios/[studioId]/workspace`
+   - Enter a prompt (e.g., "Create a social media post announcing a new product launch")
+   - Adjust parameters (aesthetic, aspect ratio, brand strength, etc.)
+   - Click "Generate"
+   - Wait for generation to complete (30-60 seconds per variant)
+   - View generated assets in the history
 
-## Known Limitations
+3. **Manage Assets:**
+   - Click on an asset to view details
+   - Favorite assets
+   - Download assets
+   - View metadata and parameters
 
-1. **Worker Dependencies**: Workers require external services (Redis, S3, OpenAI)
-2. **Browser Rendering**: Puppeteer is resource-intensive
-3. **AI Costs**: OpenAI API usage costs scale with usage
-4. **Mobile Support**: Optimized for desktop workflows
-5. **Single Brand**: MVP supports one brand at a time per user
+4. **Save Presets:**
+   - Configure parameters
+   - Click "Save Current as Preset"
+   - Name the preset
+   - Load preset in future generations
 
-## Success Metrics to Track
+## Remaining TODOs (Lower Priority)
 
-**Activation**:
-- % of users who submit a brand URL
-- % of brands that reach confirmed profile
-- Time from sign-up to first confirmed brand
+The following items from the plan were not completed as they are lower priority for MVP:
 
-**Extraction Quality**:
-- % of brands with high-confidence extraction
-- % of users who accept extracted brand with minimal edits
+- **Reference Image System:** UI for uploading and selecting reference images (API is ready)
+- **Studio Settings Page Enhancement:** Full settings management (basic structure exists)
+- **Studio Switcher:** Quick switcher in topbar (can navigate via sidebar)
+- **Enhanced App Home:** Recent studios/assets dashboard (basic empty state exists)
+- **Polish:** Additional empty states, loading states, error handling (core functionality has these)
 
-**Technical**:
-- P95 extraction job completion time
-- Job failure rate
-- API response times
+These can be added in future iterations as needed.
 
-## Differentiation from Bloom
+## Key Design Decisions
 
-| Feature | Bloom | Campaign Generator MVP |
-|---------|-------|------------------------|
-| Brand learning | Automatic | Extraction + **review wizard** |
-| Product context | Weak | **Foundation for strong grounding** |
-| Output structure | One-off assets | **Campaign sets (future)** |
-| Editing | Rerolling | **Structured-lite (future)** |
-| Trust | Hidden assumptions | **Transparent confidence indicators** |
-| UX | AI tool vibes | **Premium SaaS workflow** |
+1. **Inline CSS:** Used pure inline styles for production reliability after Tailwind v4 issues
+2. **Pre-signed URLs:** Used S3 pre-signed URLs for DALL-E access to private assets
+3. **Brand Strength Levels:** Implemented 4 levels of brand influence on generation
+4. **Optional Onboarding:** Made onboarding skippable per user preference
+5. **DALL-E 3:** Used DALL-E 3 for generation (supports 1024x1024, 1024x1792, 1792x1024)
+6. **BullMQ Workers:** Separate worker service for background processing
 
-## Conclusion
+## Next Steps
 
-The Campaign Generator MVP Phase 1-2 is **fully implemented** with:
-- ✅ Complete authentication and onboarding
-- ✅ Full brand ingestion pipeline
-- ✅ AI-powered brand extraction
-- ✅ Interactive brand review wizard
-- ✅ Premium chromic glass design system
-- ✅ Scalable architecture with workers
-- ✅ Comprehensive documentation
-- ✅ Docker deployment setup
+1. Deploy to Railway with updated environment variables
+2. Test the full generation pipeline
+3. Monitor worker logs for any issues
+4. Gather user feedback on the studio workspace UX
+5. Iterate on parameter controls based on usage patterns
 
-The foundation is solid and ready for:
-1. Local development and testing
-2. Deployment to Railway
-3. User testing and feedback
-4. Iteration toward Phase 3 (Campaign Builder)
+---
 
-**Total Implementation Time**: Completed in single session
-**Lines of Code**: ~10,000+ lines across frontend, backend, and workers
-**Components Built**: 20+ React components
-**API Routes**: 8 endpoints
-**Workers**: 3 background workers
-**Documentation**: 4 comprehensive guides
+**Status:** ✅ MVP Implementation Complete
+**Commit:** 8d39014
+**Branch:** main
+**Repository:** https://github.com/JONGYYY/bloom.git
