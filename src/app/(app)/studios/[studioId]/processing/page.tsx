@@ -16,7 +16,7 @@ const stages = [
   { id: "queued", label: "Queued", description: "Waiting to start" },
   { id: "preflight", label: "Fetching public site", description: "Validating URL" },
   { id: "rendering", label: "Rendering surfaces", description: "Capturing desktop and mobile views" },
-  { id: "extracting", label: "Detecting brand signals", description: "Analyzing colors, fonts, and logos" },
+  { id: "extracting", label: "Detecting studio signals", description: "Analyzing colors, fonts, and logos" },
   { id: "building", label: "Building draft profile", description: "Creating your studio profile" },
   { id: "complete", label: "Ready for review", description: "Extraction complete" },
 ]
@@ -34,7 +34,7 @@ export default function ProcessingPage() {
 
     const pollJobStatus = async () => {
       try {
-        const response = await fetch(`/api/brands/${studioId}/job`)
+        const response = await fetch(`/api/studios/${studioId}/job`)
         if (response.ok) {
           const data = await response.json()
           setJob(data.job)
@@ -49,7 +49,7 @@ export default function ProcessingPage() {
           if (data.job.status === "completed") {
             clearInterval(intervalId)
             setTimeout(() => {
-              router.push(`/brands/${studioId}/review`)
+              router.push(`/studios/${studioId}/review`)
             }, 1000)
           }
 
@@ -114,7 +114,7 @@ export default function ProcessingPage() {
           </p>
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
             <button
-              onClick={() => router.push("/brands/new")}
+              onClick={() => router.push("/studios/new")}
               style={{
                 height: '44px',
                 padding: '0 24px',
@@ -130,7 +130,7 @@ export default function ProcessingPage() {
               Try Another URL
             </button>
             <button
-              onClick={() => router.push("/brands")}
+              onClick={() => router.push("/studios")}
               style={{
                 height: '44px',
                 padding: '0 24px',
@@ -143,7 +143,7 @@ export default function ProcessingPage() {
                 cursor: 'pointer'
               }}
             >
-              Back to Brands
+              Back to Studios
             </button>
           </div>
         </div>
@@ -248,7 +248,7 @@ export default function ProcessingPage() {
         {/* Info box */}
         <div style={{ marginTop: '32px', padding: '16px', borderRadius: '12px', background: 'rgba(60, 203, 255, 0.1)', border: '1px solid rgba(60, 203, 255, 0.2)' }}>
           <p style={{ fontSize: '14px', color: '#3CCBFF' }}>
-            💡 We're analyzing your public website to detect colors, fonts, logos, and brand style. 
+            💡 We're analyzing your public website to detect colors, fonts, logos, and studio style. 
             You'll review everything before we generate any campaigns.
           </p>
         </div>
