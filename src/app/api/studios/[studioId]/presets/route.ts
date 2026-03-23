@@ -63,7 +63,7 @@ export async function POST(
       data: {
         studioId,
         name,
-        parameters,
+        parameters: parameters as any,
       },
     })
 
