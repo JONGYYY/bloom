@@ -17,8 +17,10 @@ export const connection: ConnectionOptions = {
 export const preflightQueue = new Queue('preflight', { connection })
 export const browserRenderQueue = new Queue('browser-render', { connection })
 export const extractionQueue = new Queue('extraction', { connection })
+export const generationQueue = new Queue('generation', { connection })
 
 // Queue events for monitoring
 export const preflightEvents = new QueueEvents('preflight', { connection })
 export const browserRenderEvents = new QueueEvents('browser-render', { connection })
 export const extractionEvents = new QueueEvents('extraction', { connection })
+export const generationEvents = new QueueEvents('generation', { connection })

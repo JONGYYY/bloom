@@ -3,16 +3,16 @@ import { connection, browserRenderQueue } from './queue'
 import { prisma } from '@/lib/db'
 
 interface PreflightJobData {
-  brandId: string
+  studioId: string
   url: string
   jobId: string
 }
 
 async function processPreflightJob(job: Job<PreflightJobData>) {
-  const { brandId, url, jobId } = job.data
+  const { studioId, url, jobId } = job.data
 
   try {
-    console.log(`[Preflight] Starting for brand ${brandId}`)
+    console.log(`[Preflight] Starting for studio ${studioId}`)
 
     // Update job stage
     await prisma.generationJob.update({
@@ -60,16 +60,16 @@ async function processPreflightJob(job: Job<PreflightJobData>) {
 
     // Enqueue browser render job
     await browserRenderQueue.add('render', {
-      brandId,
+      studioId,
       url,
       jobId,
     })
 
-    console.log(`[Preflight] Complete for brand ${brandId}, enqueued browser render`)
+    console.log(`[Preflight] Complete for studio ${studioId}, enqueued browser render`)
 
     return { success: true }
   } catch (error) {
-    console.error(`[Preflight] Error for brand ${brandId}:`, error)
+    console.error(`[Preflight] Error for studio ${studioId}:`, error)
 
     // Update job as failed
     await prisma.generationJob.update({

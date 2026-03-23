@@ -17,7 +17,7 @@ export default async function LandingPage() {
       <header className="fixed top-0 w-full z-50 glass-panel border-b">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent">
-            Campaign Generator
+            Bloom
           </div>
           <nav className="flex items-center gap-6">
             <Link 
@@ -41,14 +41,14 @@ export default async function LandingPage() {
         <section className="container mx-auto px-6 py-20">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-6xl font-bold mb-6 leading-tight">
-              Turn your brand URL into{" "}
+              Brand-aware creative{" "}
               <span className="bg-gradient-to-r from-violet-500 via-cyan-500 to-teal-500 bg-clip-text text-transparent">
-                campaign-ready assets
+                generation studio
               </span>
             </h1>
             <p className="text-xl text-mist-300 mb-8 leading-relaxed">
-              The fastest way for a brand to turn a website URL and product context 
-              into an on-brand, editable campaign set.
+              Generate on-brand creative assets with AI that understands your brand's visual identity. 
+              From social posts to marketing materials, all consistent with your brand.
             </p>
             <div className="flex gap-4 justify-center">
               <Link 
@@ -73,27 +73,60 @@ export default async function LandingPage() {
                 <div className="w-12 h-12 bg-violet-500/20 rounded-lg flex items-center justify-center mb-4">
                   <span className="text-2xl">🔍</span>
                 </div>
-                <h3 className="text-xl font-semibold mb-3">1. Submit your brand URL</h3>
+                <h3 className="text-xl font-semibold mb-3">1. Create your brand studio</h3>
                 <p className="text-mist-300">
-                  We analyze your public website to detect colors, fonts, logos, and brand style.
+                  Submit your website URL. We analyze your public site to extract colors, fonts, logos, and brand style.
                 </p>
               </div>
               <div className="glass-panel p-8 rounded-lg">
                 <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center mb-4">
                   <span className="text-2xl">✓</span>
                 </div>
-                <h3 className="text-xl font-semibold mb-3">2. Review and confirm</h3>
+                <h3 className="text-xl font-semibold mb-3">2. Review your brand profile</h3>
                 <p className="text-mist-300">
-                  Review what we detected before you generate. Edit anything that needs adjustment.
+                  Review the detected brand elements. Edit colors, fonts, and style traits before generating.
                 </p>
               </div>
               <div className="glass-panel p-8 rounded-lg">
                 <div className="w-12 h-12 bg-teal-500/20 rounded-lg flex items-center justify-center mb-4">
-                  <span className="text-2xl">🎨</span>
+                  <span className="text-2xl">✨</span>
                 </div>
-                <h3 className="text-xl font-semibold mb-3">3. Generate campaigns</h3>
+                <h3 className="text-xl font-semibold mb-3">3. Generate creative assets</h3>
                 <p className="text-mist-300">
-                  Create campaign-ready assets, not one-off images. Export and use immediately.
+                  Describe what you need. AI generates on-brand assets using your brand's visual identity.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Product Differentiation */}
+        <section className="container mx-auto px-6 py-20">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold text-center mb-12">Why Bloom is different</h2>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="glass-panel p-8 rounded-lg">
+                <h3 className="text-xl font-semibold mb-3">Brand-aware, not generic</h3>
+                <p className="text-mist-300">
+                  Unlike generic AI tools, Bloom learns your brand's visual identity and generates assets that match your style, colors, and aesthetic.
+                </p>
+              </div>
+              <div className="glass-panel p-8 rounded-lg">
+                <h3 className="text-xl font-semibold mb-3">Structured creative control</h3>
+                <p className="text-mist-300">
+                  Control output type, aesthetic, composition, and brand strength. Generate exactly what you need, not random variations.
+                </p>
+              </div>
+              <div className="glass-panel p-8 rounded-lg">
+                <h3 className="text-xl font-semibold mb-3">Built for workflow</h3>
+                <p className="text-mist-300">
+                  Save presets, reuse settings, organize favorites. Built for teams that generate creative assets regularly.
+                </p>
+              </div>
+              <div className="glass-panel p-8 rounded-lg">
+                <h3 className="text-xl font-semibold mb-3">Trust and transparency</h3>
+                <p className="text-mist-300">
+                  Review all detected brand values before generation. No hidden assumptions. Every parameter is explicit and adjustable.
                 </p>
               </div>
             </div>
@@ -103,13 +136,13 @@ export default async function LandingPage() {
         {/* Trust Section */}
         <section className="container mx-auto px-6 py-20">
           <div className="max-w-3xl mx-auto glass-panel p-12 rounded-lg text-center">
-            <h2 className="text-2xl font-bold mb-4">Built for trust and transparency</h2>
+            <h2 className="text-2xl font-bold mb-4">Public site analysis only</h2>
             <p className="text-mist-300 mb-6">
-              We analyze publicly available site styling and assets. 
-              You'll review all detected values before campaign generation.
+              We only analyze publicly available site styling and assets from your website. 
+              You review and confirm everything before any creative generation begins.
             </p>
             <p className="text-sm text-fog-400">
-              No hidden assumptions. Every step has a purpose.
+              Clarity over spectacle. Trust over novelty. Workflow over demo.
             </p>
           </div>
         </section>
@@ -118,7 +151,7 @@ export default async function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-stroke-subtle py-8">
         <div className="container mx-auto px-6 text-center text-mist-300">
-          <p>&copy; 2026 Campaign Generator. All rights reserved.</p>
+          <p>&copy; 2026 Bloom. All rights reserved.</p>
         </div>
       </footer>
     </div>

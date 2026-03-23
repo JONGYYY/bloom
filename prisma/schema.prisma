@@ -29,10 +29,10 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   users     User[]
-  brands    Brand[]
+  studios   Studio[]
 }
 
-model Brand {
+model Studio {
   id           String          @id @default(cuid())
   workspaceId  String
   rootDomain   String
@@ -42,14 +42,17 @@ model Brand {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   workspace    Workspace       @relation(fields: [workspaceId], references: [id])
-  profile      BrandProfile?
-  assets       BrandAsset[]
+  profile      StudioProfile?
+  brandAssets  BrandAsset[]
   jobs         GenerationJob[]
+  generations  Generation[]
+  assets       Asset[]
+  presets      Preset[]
 }
 
-model BrandProfile {
+model StudioProfile {
   id          String   @id @default(cuid())
-  brandId     String   @unique
+  studioId    String   @unique
   version     Int      @default(1)
   colors      Json
   fonts       Json
@@ -59,18 +62,18 @@ model BrandProfile {
   isConfirmed Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  brand       Brand    @relation(fields: [brandId], references: [id])
+  studio      Studio   @relation(fields: [studioId], references: [id])
 }
 
 model BrandAsset {
   id         String   @id @default(cuid())
-  brandId    String
+  studioId   String
   type       String
   storageKey String
   metadata   Json?
   sourceUrl  String?
   createdAt  DateTime @default(now())
-  brand      Brand    @relation(fields: [brandId], references: [id])
+  studio     Studio   @relation(fields: [studioId], references: [id])
 }
 
 model GenerationJob {
@@ -78,11 +81,49 @@ model GenerationJob {
   jobType    String
   status     String   @default("queued")
   stage      String?
-  brandId    String?
+  studioId   String?
   payload    Json?
   progress   Int      @default(0)
   error      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  brand      Brand?   @relation(fields: [brandId], references: [id])
+  studio     Studio?  @relation(fields: [studioId], references: [id])
+}
+
+model Generation {
+  id          String   @id @default(cuid())
+  studioId    String
+  prompt      String
+  parameters  Json
+  status      String   @default("queued")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  studio      Studio   @relation(fields: [studioId], references: [id])
+  assets      Asset[]
+}
+
+model Asset {
+  id            String      @id @default(cuid())
+  studioId      String
+  generationId  String?
+  type          String
+  storageKey    String
+  url           String?
+  prompt        String?
+  parameters    Json?
+  metadata      Json?
+  isFavorite    Boolean     @default(false)
+  isReference   Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  studio        Studio      @relation(fields: [studioId], references: [id])
+  generation    Generation? @relation(fields: [generationId], references: [id])
+}
+
+model Preset {
+  id         String   @id @default(cuid())
+  studioId   String
+  name       String
+  parameters Json
+  createdAt  DateTime @default(now())
+  studio     Studio   @relation(fields: [studioId], references: [id])
 }

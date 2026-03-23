@@ -8,7 +8,7 @@ import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
 
 interface BrowserRenderJobData {
-  brandId: string
+  studioId: string
   url: string
   jobId: string
 }
@@ -80,10 +80,10 @@ async function uploadToS3(buffer: Buffer | Uint8Array, key: string): Promise<str
 }
 
 async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
-  const { brandId, url, jobId } = job.data
+  const { studioId, url, jobId } = job.data
 
   try {
-    console.log(`[Browser Render] Starting for brand ${brandId}`)
+    console.log(`[Browser Render] Starting for studio ${studioId}`)
 
     // Update job stage
     await prisma.generationJob.update({
@@ -165,8 +165,8 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
 
     // Upload screenshots to S3
     console.log(`[Browser Render] Uploading screenshots to S3`)
-    const desktopKey = `brands/${brandId}/screenshots/desktop-${Date.now()}.png`
-    const mobileKey = `brands/${brandId}/screenshots/mobile-${Date.now()}.png`
+    const desktopKey = `studios/${studioId}/screenshots/desktop-${Date.now()}.png`
+    const mobileKey = `studios/${studioId}/screenshots/mobile-${Date.now()}.png`
 
     const [desktopUrl, mobileUrl] = await Promise.all([
       uploadToS3(desktopScreenshot, desktopKey),
@@ -177,14 +177,14 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
     await prisma.brandAsset.createMany({
       data: [
         {
-          brandId,
+          studioId,
           type: 'screenshot_desktop',
           storageKey: desktopKey,
           sourceUrl: url,
           metadata: { width: 1920, height: 1080 },
         },
         {
-          brandId,
+          studioId,
           type: 'screenshot_mobile',
           storageKey: mobileKey,
           sourceUrl: url,
@@ -204,7 +204,7 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
 
     // Enqueue extraction job
     await extractionQueue.add('extract', {
-      brandId,
+      studioId,
       url,
       jobId,
       desktopScreenshotUrl: desktopUrl,
@@ -212,11 +212,11 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
       domData,
     })
 
-    console.log(`[Browser Render] Complete for brand ${brandId}, enqueued extraction`)
+    console.log(`[Browser Render] Complete for studio ${studioId}, enqueued extraction`)
 
     return { success: true }
   } catch (error) {
-    console.error(`[Browser Render] Error for brand ${brandId}:`, error)
+    console.error(`[Browser Render] Error for studio ${studioId}:`, error)
 
     // Update job as failed
     await prisma.generationJob.update({

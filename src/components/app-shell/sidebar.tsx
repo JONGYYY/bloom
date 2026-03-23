@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 
 const navigation = [
   { name: "Home", href: "/dashboard", icon: Home },
-  { name: "Brands", href: "/brands", icon: Palette },
+  { name: "Studios", href: "/studios", icon: Palette },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
@@ -20,7 +20,7 @@ export function Sidebar() {
       <div className="p-6 border-b border-stroke-subtle">
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="text-2xl font-bold bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent">
-            Campaign Gen
+            Bloom
           </div>
         </Link>
       </div>

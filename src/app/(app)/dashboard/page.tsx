@@ -18,9 +18,9 @@ export default function DashboardPage() {
             marginBottom: '8px',
             color: '#F3F7FF'
           }}>Dashboard</h1>
-          <p style={{ color: '#A8B5CC' }}>Welcome back. Start creating your next campaign.</p>
+          <p style={{ color: '#A8B5CC' }}>Welcome back. Start generating creative assets.</p>
         </div>
-        <Link href="/brands/new">
+        <Link href="/studios/new">
           <button style={{
             height: '44px',
             padding: '0 24px',
@@ -36,7 +36,7 @@ export default function DashboardPage() {
             gap: '8px'
           }}>
             <Plus className="w-5 h-5" />
-            Add Brand
+            New Studio
           </button>
         </Link>
       </div>
@@ -70,15 +70,15 @@ export default function DashboardPage() {
             fontWeight: '600', 
             marginBottom: '8px',
             color: '#F3F7FF'
-          }}>No brands yet</h2>
+          }}>No studios yet</h2>
           <p style={{ 
             color: '#A8B5CC', 
             marginBottom: '24px',
             lineHeight: '1.6'
           }}>
-            Get started by adding your first brand. We'll analyze your website and extract your brand profile.
+            Get started by creating your first brand studio. We'll analyze your website and set up your creative workspace.
           </p>
-          <Link href="/brands/new">
+          <Link href="/studios/new">
             <button style={{
               height: '44px',
               padding: '0 24px',
@@ -90,7 +90,7 @@ export default function DashboardPage() {
               fontWeight: '500',
               cursor: 'pointer'
             }}>
-              Add your first brand
+              Create your first studio
             </button>
           </Link>
         </div>

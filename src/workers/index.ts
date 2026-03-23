@@ -8,6 +8,7 @@
 import './preflight'
 import './browser-render'
 import './extraction'
+import './generation'
 
 console.log('[Workers] All workers started successfully')
 

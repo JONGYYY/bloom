@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 import OpenAI from 'openai'
 
 interface ExtractionJobData {
-  brandId: string
+  studioId: string
   url: string
   jobId: string
   desktopScreenshotUrl: string
@@ -17,10 +17,10 @@ const openai = new OpenAI({
 })
 
 async function processExtractionJob(job: Job<ExtractionJobData>) {
-  const { brandId, url, jobId, desktopScreenshotUrl, domData } = job.data
+  const { studioId, url, jobId, desktopScreenshotUrl, domData } = job.data
 
   try {
-    console.log(`[Extraction] Starting for brand ${brandId}`)
+    console.log(`[Extraction] Starting for studio ${studioId}`)
 
     // Update job stage
     await prisma.generationJob.update({
@@ -135,10 +135,10 @@ Return a JSON object with this structure:
       },
     })
 
-    // Create brand profile
-    await prisma.brandProfile.create({
+    // Create studio profile
+    await prisma.studioProfile.create({
       data: {
-        brandId,
+        studioId,
         colors: extractedData.colors || {},
         fonts: extractedData.fonts || {},
         logos: extractedData.logos || { candidates: [], selected: null },
@@ -148,9 +148,9 @@ Return a JSON object with this structure:
       },
     })
 
-    // Update brand status
-    await prisma.brand.update({
-      where: { id: brandId },
+    // Update studio status
+    await prisma.studio.update({
+      where: { id: studioId },
       data: {
         status: 'ready',
       },
@@ -166,11 +166,11 @@ Return a JSON object with this structure:
       },
     })
 
-    console.log(`[Extraction] Complete for brand ${brandId}`)
+    console.log(`[Extraction] Complete for studio ${studioId}`)
 
     return { success: true }
   } catch (error) {
-    console.error(`[Extraction] Error for brand ${brandId}:`, error)
+    console.error(`[Extraction] Error for studio ${studioId}:`, error)
 
     // Update job as failed
     await prisma.generationJob.update({
