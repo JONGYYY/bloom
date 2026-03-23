@@ -32,6 +32,10 @@ async function processExtractionJob(job: Job<ExtractionJobData>) {
     })
 
     // Prepare prompt for GPT-4 Vision
+    const imageList = domData.images?.map((img: any, idx: number) => 
+      `${idx + 1}. ${img.src} (alt: "${img.alt}", ${img.width}x${img.height})`
+    ).join('\n') || 'No images found'
+
     const prompt = `Analyze this brand website screenshot and extract the following brand elements:
 
 1. Color Palette:
@@ -39,6 +43,7 @@ async function processExtractionJob(job: Job<ExtractionJobData>) {
    - Identify 2-3 secondary colors (supporting colors)
    - Identify 1-2 accent colors (call-to-action, highlights)
    - Provide confidence level (high/medium/low) for each color group
+   - Return colors as hex codes (e.g., "#FF5733")
 
 2. Typography:
    - Identify the heading font family and weight
@@ -46,8 +51,13 @@ async function processExtractionJob(job: Job<ExtractionJobData>) {
    - Provide confidence level for each
 
 3. Logo Candidates:
-   - Identify likely logo images from the page
-   - Rank by confidence
+   - From the images list below, identify which ones are likely brand logos
+   - Return the exact URL from the list
+   - Rank by confidence (high/medium/low)
+   - Typically logos are in the header/nav area and are relatively small
+
+Images found on page:
+${imageList}
 
 4. Style Traits:
    - Select applicable traits from: minimal, premium, playful, bold, editorial, soft, sporty, luxe
@@ -84,7 +94,7 @@ Return a JSON object with this structure:
   },
   "logos": {
     "candidates": [
-      { "url": "image-url", "confidence": "high" | "medium" | "low" }
+      { "url": "exact-url-from-images-list", "confidence": "high" | "medium" | "low" }
     ],
     "selected": null
   },

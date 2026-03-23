@@ -250,7 +250,73 @@ export default function StudioReviewPage() {
                   <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
                     Review and adjust your studio color palette
                   </p>
-                  <div style={{ color: '#A8B5CC' }}>Color palette editor coming soon...</div>
+                  
+                  {studioProfile?.colors && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                      {/* Primary Colors */}
+                      {studioProfile.colors.primary && studioProfile.colors.primary.length > 0 && (
+                        <div>
+                          <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#F3F7FF' }}>Primary Colors</h3>
+                          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                            {studioProfile.colors.primary.map((color: string, idx: number) => (
+                              <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                                <div style={{ 
+                                  width: '80px', 
+                                  height: '80px', 
+                                  borderRadius: '12px', 
+                                  background: color,
+                                  border: '2px solid rgba(255, 255, 255, 0.1)'
+                                }} />
+                                <span style={{ fontSize: '12px', color: '#A8B5CC', fontFamily: 'monospace' }}>{color}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Secondary Colors */}
+                      {studioProfile.colors.secondary && studioProfile.colors.secondary.length > 0 && (
+                        <div>
+                          <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#F3F7FF' }}>Secondary Colors</h3>
+                          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                            {studioProfile.colors.secondary.map((color: string, idx: number) => (
+                              <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                                <div style={{ 
+                                  width: '80px', 
+                                  height: '80px', 
+                                  borderRadius: '12px', 
+                                  background: color,
+                                  border: '2px solid rgba(255, 255, 255, 0.1)'
+                                }} />
+                                <span style={{ fontSize: '12px', color: '#A8B5CC', fontFamily: 'monospace' }}>{color}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Accent Colors */}
+                      {studioProfile.colors.accent && studioProfile.colors.accent.length > 0 && (
+                        <div>
+                          <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#F3F7FF' }}>Accent Colors</h3>
+                          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                            {studioProfile.colors.accent.map((color: string, idx: number) => (
+                              <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                                <div style={{ 
+                                  width: '80px', 
+                                  height: '80px', 
+                                  borderRadius: '12px', 
+                                  background: color,
+                                  border: '2px solid rgba(255, 255, 255, 0.1)'
+                                }} />
+                                <span style={{ fontSize: '12px', color: '#A8B5CC', fontFamily: 'monospace' }}>{color}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -260,7 +326,56 @@ export default function StudioReviewPage() {
                   <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
                     Review your typography choices
                   </p>
-                  <div style={{ color: '#A8B5CC' }}>Font selector coming soon...</div>
+                  
+                  {studioProfile?.fonts && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                      {/* Heading Font */}
+                      {studioProfile.fonts.heading && (
+                        <div style={{
+                          padding: '24px',
+                          borderRadius: '12px',
+                          background: 'rgba(30, 35, 48, 0.5)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#A8B5CC', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Heading Font</h3>
+                          <div style={{ 
+                            fontSize: '32px', 
+                            fontWeight: studioProfile.fonts.heading.weight || '600',
+                            color: '#F3F7FF',
+                            marginBottom: '8px'
+                          }}>
+                            {studioProfile.fonts.heading.family}
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#A8B5CC' }}>
+                            Weight: {studioProfile.fonts.heading.weight} • Confidence: {studioProfile.fonts.heading.confidence}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Body Font */}
+                      {studioProfile.fonts.body && (
+                        <div style={{
+                          padding: '24px',
+                          borderRadius: '12px',
+                          background: 'rgba(30, 35, 48, 0.5)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#A8B5CC', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Body Font</h3>
+                          <div style={{ 
+                            fontSize: '18px', 
+                            fontWeight: studioProfile.fonts.body.weight || '400',
+                            color: '#F3F7FF',
+                            marginBottom: '8px'
+                          }}>
+                            {studioProfile.fonts.body.family}
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#A8B5CC' }}>
+                            Weight: {studioProfile.fonts.body.weight} • Confidence: {studioProfile.fonts.body.confidence}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -270,7 +385,63 @@ export default function StudioReviewPage() {
                   <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
                     Select your primary logo
                   </p>
-                  <div style={{ color: '#A8B5CC' }}>Logo selector coming soon...</div>
+                  
+                  {studioProfile?.logos?.candidates && studioProfile.logos.candidates.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+                      {studioProfile.logos.candidates.map((logo: any, idx: number) => (
+                        <div 
+                          key={idx}
+                          onClick={() => {
+                            const updatedProfile = { ...studioProfile }
+                            updatedProfile.logos.selected = logo.url
+                            setStudioProfile(updatedProfile)
+                            setValue('logos', updatedProfile.logos)
+                          }}
+                          style={{
+                            padding: '16px',
+                            borderRadius: '12px',
+                            background: 'rgba(30, 35, 48, 0.5)',
+                            border: studioProfile.logos.selected === logo.url 
+                              ? '2px solid #7A6CFF' 
+                              : '1px solid rgba(255, 255, 255, 0.1)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <div style={{ 
+                            aspectRatio: '16/9', 
+                            background: 'rgba(255, 255, 255, 0.05)', 
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: '12px',
+                            overflow: 'hidden'
+                          }}>
+                            <img 
+                              src={logo.url} 
+                              alt={`Logo candidate ${idx + 1}`}
+                              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                            />
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#A8B5CC', textAlign: 'center' }}>
+                            Confidence: {logo.confidence}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      padding: '32px', 
+                      textAlign: 'center', 
+                      color: '#A8B5CC',
+                      background: 'rgba(30, 35, 48, 0.5)',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      No logo candidates detected
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -280,7 +451,38 @@ export default function StudioReviewPage() {
                   <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
                     Define your studio's visual style
                   </p>
-                  <div style={{ color: '#A8B5CC' }}>Style trait editor coming soon...</div>
+                  
+                  {studioProfile?.styleTraits && studioProfile.styleTraits.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                      {studioProfile.styleTraits.map((trait: string, idx: number) => (
+                        <span 
+                          key={idx}
+                          style={{ 
+                            padding: '12px 20px', 
+                            borderRadius: '9999px', 
+                            background: 'rgba(122, 108, 255, 0.2)', 
+                            color: '#7A6CFF', 
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            border: '1px solid rgba(122, 108, 255, 0.3)'
+                          }}
+                        >
+                          {trait}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      padding: '32px', 
+                      textAlign: 'center', 
+                      color: '#A8B5CC',
+                      background: 'rgba(30, 35, 48, 0.5)',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      No style traits detected
+                    </div>
+                  )}
                 </div>
               )}
 
