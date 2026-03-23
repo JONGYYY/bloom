@@ -1,16 +1,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Download, Heart, Image as ImageIcon } from "lucide-react"
+import { Download, Heart, Image as ImageIcon, Copy, Sparkles, Palette } from "lucide-react"
 
 interface AssetHistoryProps {
   studioId: string
+  onRemix?: (asset: any) => void
+  onTryDifferentStyle?: (asset: any) => void
+  onCopyPrompt?: (prompt: string) => void
 }
 
-export function AssetHistory({ studioId }: AssetHistoryProps) {
+export function AssetHistory({ studioId, onRemix, onTryDifferentStyle, onCopyPrompt }: AssetHistoryProps) {
   const [tab, setTab] = useState<'recent' | 'favorites' | 'references'>('recent')
   const [assets, setAssets] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [hoveredAsset, setHoveredAsset] = useState<string | null>(null)
 
   useEffect(() => {
     fetchAssets()
@@ -118,44 +122,46 @@ export function AssetHistory({ studioId }: AssetHistoryProps) {
               )}
               
               {/* Overlay actions */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
-                opacity: 0,
-                transition: 'opacity 0.2s',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                padding: '12px',
-              }}
-              className="asset-overlay"
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
+              <div 
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0.4))',
+                  opacity: hoveredAsset === asset.id ? 1 : 0,
+                  transition: 'opacity 0.2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  padding: '12px',
+                }}
+                onMouseEnter={() => setHoveredAsset(asset.id)}
+                onMouseLeave={() => setHoveredAsset(null)}
               >
-                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                {/* Top row - Quick actions */}
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       toggleFavorite(asset.id, asset.isFavorite)
                     }}
                     style={{
-                      width: '32px',
-                      height: '32px',
-                      background: 'rgba(0, 0, 0, 0.6)',
+                      width: '28px',
+                      height: '28px',
+                      background: 'rgba(0, 0, 0, 0.7)',
                       border: 'none',
-                      borderRadius: '50%',
+                      borderRadius: '6px',
                       color: asset.isFavorite ? '#FF6B6B' : 'white',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
+                    title="Favorite"
                   >
-                    <Heart style={{ width: '16px', height: '16px', fill: asset.isFavorite ? 'currentColor' : 'none' }} />
+                    <Heart style={{ width: '14px', height: '14px', fill: asset.isFavorite ? 'currentColor' : 'none' }} />
                   </button>
                   <button
                     onClick={(e) => {
@@ -163,20 +169,104 @@ export function AssetHistory({ studioId }: AssetHistoryProps) {
                       window.open(asset.url, '_blank')
                     }}
                     style={{
-                      width: '32px',
-                      height: '32px',
-                      background: 'rgba(0, 0, 0, 0.6)',
+                      width: '28px',
+                      height: '28px',
+                      background: 'rgba(0, 0, 0, 0.7)',
                       border: 'none',
-                      borderRadius: '50%',
+                      borderRadius: '6px',
                       color: 'white',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
+                    title="Download"
                   >
-                    <Download style={{ width: '16px', height: '16px' }} />
+                    <Download style={{ width: '14px', height: '14px' }} />
                   </button>
+                </div>
+
+                {/* Bottom row - New actions */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {asset.prompt && onCopyPrompt && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onCopyPrompt(asset.prompt)
+                        navigator.clipboard.writeText(asset.prompt)
+                      }}
+                      style={{
+                        padding: '6px 10px',
+                        background: 'rgba(0, 0, 0, 0.8)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: 'white',
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        justifyContent: 'center'
+                      }}
+                      title="Copy prompt"
+                    >
+                      <Copy style={{ width: '12px', height: '12px' }} />
+                      Copy Prompt
+                    </button>
+                  )}
+                  {asset.type === 'generated' && onRemix && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onRemix(asset)
+                      }}
+                      style={{
+                        padding: '6px 10px',
+                        background: 'rgba(122, 108, 255, 0.8)',
+                        border: '1px solid rgba(122, 108, 255, 0.5)',
+                        borderRadius: '6px',
+                        color: 'white',
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        justifyContent: 'center'
+                      }}
+                      title="Remix with same settings"
+                    >
+                      <Sparkles style={{ width: '12px', height: '12px' }} />
+                      Remix
+                    </button>
+                  )}
+                  {asset.type === 'generated' && onTryDifferentStyle && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onTryDifferentStyle(asset)
+                      }}
+                      style={{
+                        padding: '6px 10px',
+                        background: 'rgba(0, 0, 0, 0.8)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '6px',
+                        color: 'white',
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        justifyContent: 'center'
+                      }}
+                      title="Try different aesthetic"
+                    >
+                      <Palette style={{ width: '12px', height: '12px' }} />
+                      Different Style
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

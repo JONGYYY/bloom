@@ -422,6 +422,17 @@ export default function StudioReviewPage() {
                               src={logo.url} 
                               alt={`Logo candidate ${idx + 1}`}
                               style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.style.display = 'none'
+                                const parent = target.parentElement
+                                if (parent) {
+                                  const placeholder = document.createElement('div')
+                                  placeholder.style.cssText = 'color: #A8B5CC; font-size: 14px; text-align: center;'
+                                  placeholder.textContent = 'Image unavailable'
+                                  parent.appendChild(placeholder)
+                                }
+                              }}
                             />
                           </div>
                           <div style={{ fontSize: '12px', color: '#A8B5CC', textAlign: 'center' }}>

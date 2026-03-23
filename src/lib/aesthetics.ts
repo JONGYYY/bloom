@@ -124,10 +124,16 @@ export const TEXT_PRESENCE_LEVELS = [
   { id: 'text-heavy', label: 'Text-Heavy', description: 'Multiple text elements' },
 ]
 
-// Quality levels
+// Quality levels (DALL-E 3)
 export const QUALITY_LEVELS = [
-  { id: 'standard', label: 'Standard', description: 'Good quality, faster' },
-  { id: 'hd', label: 'HD', description: 'Higher quality, slower' },
+  { id: 'standard', label: 'Standard', description: '1K resolution, faster generation' },
+  { id: 'hd', label: 'HD', description: '1K resolution, higher quality' },
+]
+
+// DALL-E 3 style parameter
+export const DALLE_STYLES = [
+  { id: 'vivid', label: 'Vivid', description: 'Hyper-real and dramatic' },
+  { id: 'natural', label: 'Natural', description: 'More realistic and subtle' },
 ]
 
 // Helper functions
