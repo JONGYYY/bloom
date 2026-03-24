@@ -16,19 +16,26 @@ export async function POST(
 
     // Verify authentication
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
 
-    if (authError || !user) {
+    if (authError || !authUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Get user with workspace
+    const user = await prisma.user.findUnique({
+      where: { authId: authUser.id },
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     // Verify studio ownership
     const studio = await prisma.studio.findFirst({
       where: {
         id: studioId,
-        workspace: {
-          userId: user.id,
-        },
+        workspaceId: user.workspaceId,
       },
       include: {
         profile: true,
