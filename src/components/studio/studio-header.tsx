@@ -4,29 +4,17 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronDown, Search, Bell, HelpCircle, Plus } from "lucide-react"
 
-interface StudioProfile {
-  colors?: {
-    primary?: string[]
-    secondary?: string[]
-    accent?: string[]
-  }
-  logos?: {
-    primary?: { url: string }
-  }
-  styleTraits?: string[]
-}
-
 interface Studio {
   id: string
-  displayName: string
+  displayName: string | null
   rootDomain: string
-  profile?: StudioProfile
+  profile?: any
 }
 
 interface StudioHeaderProps {
   studioId: string
-  studio?: Studio
-  profile?: StudioProfile
+  studio?: any
+  profile?: any
 }
 
 export default function StudioHeader({ studioId, studio, profile }: StudioHeaderProps) {
@@ -71,7 +59,7 @@ export default function StudioHeader({ studioId, studio, profile }: StudioHeader
     }
   }
 
-  const getStudioColors = (studioProfile?: StudioProfile) => {
+  const getStudioColors = (studioProfile?: any) => {
     if (!studioProfile?.colors) return []
     const colors = [
       ...(studioProfile.colors.primary || []),
@@ -96,7 +84,7 @@ export default function StudioHeader({ studioId, studio, profile }: StudioHeader
             {studio?.profile?.logos?.primary?.url && (
               <img 
                 src={studio.profile.logos.primary.url} 
-                alt={studio.displayName}
+                alt={studio.displayName || 'Studio logo'}
                 style={{ height: '20px', width: 'auto', objectFit: 'contain' }}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
@@ -149,7 +137,7 @@ export default function StudioHeader({ studioId, studio, profile }: StudioHeader
                         {s.profile?.logos?.primary?.url && (
                           <img 
                             src={s.profile.logos.primary.url} 
-                            alt={s.displayName}
+                            alt={s.displayName || 'Studio logo'}
                             style={{ height: '24px', width: '24px', objectFit: 'contain' }}
                             onError={(e) => {
                               const target = e.target as HTMLImageElement
@@ -163,7 +151,7 @@ export default function StudioHeader({ studioId, studio, profile }: StudioHeader
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
                           }}>
-                            {s.displayName}
+                            {s.displayName || 'Untitled Studio'}
                           </div>
                           <div className="text-caption" style={{ 
                             color: 'var(--color-text-tertiary)',
@@ -232,7 +220,7 @@ export default function StudioHeader({ studioId, studio, profile }: StudioHeader
                         {s.profile?.logos?.primary?.url && (
                           <img 
                             src={s.profile.logos.primary.url} 
-                            alt={s.displayName}
+                            alt={s.displayName || 'Studio logo'}
                             style={{ height: '24px', width: '24px', objectFit: 'contain' }}
                             onError={(e) => {
                               const target = e.target as HTMLImageElement
@@ -246,7 +234,7 @@ export default function StudioHeader({ studioId, studio, profile }: StudioHeader
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
                           }}>
-                            {s.displayName}
+                            {s.displayName || 'Untitled Studio'}
                           </div>
                           <div className="text-caption" style={{ 
                             color: 'var(--color-text-tertiary)',

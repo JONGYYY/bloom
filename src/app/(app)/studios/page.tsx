@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card"
 
 interface Studio {
   id: string
-  displayName: string
+  displayName: string | null
   rootDomain: string
   status: string
   updatedAt: string
@@ -87,7 +87,7 @@ export default function StudiosPage() {
   }
 
   const filteredStudios = studios.filter(studio =>
-    studio.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (studio.displayName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     studio.rootDomain.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
@@ -221,7 +221,7 @@ export default function StudiosPage() {
                     {studio.profile?.logos?.primary?.url && (
                       <img 
                         src={studio.profile.logos.primary.url} 
-                        alt={studio.displayName}
+                        alt={studio.displayName || 'Studio logo'}
                         style={{ height: '48px', width: 'auto', marginBottom: '16px', objectFit: 'contain' }}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement
@@ -237,7 +237,7 @@ export default function StudiosPage() {
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
                     }}>
-                      {studio.displayName}
+                      {studio.displayName || 'Untitled Studio'}
                     </h3>
                     
                     {/* Domain */}

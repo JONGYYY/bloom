@@ -3,16 +3,16 @@ import { createClient } from "@/lib/supabase/server"
 import { prisma } from "@/lib/prisma"
 import OpenAI from "openai"
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-})
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ studioId: string }> }
 ) {
   try {
     const { studioId } = await params
+    
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY!,
+    })
 
     // Verify authentication
     const supabase = await createClient()
