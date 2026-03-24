@@ -13,12 +13,12 @@ interface JobStatus {
 }
 
 const stages = [
-  { id: "queued", label: "Queued", description: "Waiting to start" },
-  { id: "preflight", label: "Fetching public site", description: "Validating URL" },
-  { id: "rendering", label: "Rendering surfaces", description: "Capturing desktop and mobile views" },
-  { id: "extracting", label: "Detecting studio signals", description: "Analyzing colors, fonts, and logos" },
-  { id: "building", label: "Building draft profile", description: "Creating your studio profile" },
-  { id: "complete", label: "Ready for review", description: "Extraction complete" },
+  { id: "queued", label: "Added to queue", description: "Your brand analysis is queued" },
+  { id: "preflight", label: "Connecting to site", description: "Accessing your website" },
+  { id: "rendering", label: "Capturing visual language", description: "Taking screenshots and analyzing layout" },
+  { id: "extracting", label: "Extracting brand signals", description: "Identifying colors, fonts, and logos" },
+  { id: "building", label: "Assembling brand profile", description: "Creating your brand kit" },
+  { id: "complete", label: "Draft ready for review", description: "Brand profile complete" },
 ]
 
 export default function ProcessingPage() {
@@ -78,18 +78,15 @@ export default function ProcessingPage() {
 
   if (!job) {
     return (
-      <div style={{ maxWidth: '768px', margin: '0 auto' }}>
-        <div style={{
-          background: 'rgba(15, 18, 25, 0.6)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '12px',
-          padding: '48px',
-          textAlign: 'center'
-        }}>
-          <Loader2 style={{ width: '48px', height: '48px', color: '#7A6CFF', margin: '0 auto 16px' }} className="animate-spin" />
-          <p style={{ color: '#A8B5CC' }}>Loading...</p>
+      <div style={{ maxWidth: '768px', margin: '0 auto', padding: '48px' }}>
+        <div className="card" style={{ padding: '48px', textAlign: 'center' }}>
+          <Loader2 className="w-12 h-12 animate-spin" style={{ 
+            color: 'var(--color-ivy-500)',
+            margin: '0 auto 16px'
+          }} />
+          <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>
+            Loading...
+          </p>
         </div>
       </div>
     )
@@ -97,51 +94,35 @@ export default function ProcessingPage() {
 
   if (job.status === "failed") {
     return (
-      <div style={{ maxWidth: '768px', margin: '0 auto' }}>
-        <div style={{
-          background: 'rgba(15, 18, 25, 0.6)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '12px',
-          padding: '48px',
-          textAlign: 'center'
+      <div style={{ maxWidth: '768px', margin: '0 auto', padding: '48px' }}>
+        <div className="card" style={{ 
+          padding: '48px', 
+          textAlign: 'center',
+          border: '1px solid var(--color-danger-500)'
         }}>
-          <XCircle style={{ width: '48px', height: '48px', color: '#FF6B6B', margin: '0 auto 16px' }} />
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', color: '#F3F7FF' }}>Extraction Failed</h2>
-          <p style={{ color: '#A8B5CC', marginBottom: '24px' }}>
-            {job.error || "We couldn't extract your studio profile. Please try again."}
+          <XCircle className="w-12 h-12" style={{ 
+            color: 'var(--color-danger-500)',
+            margin: '0 auto 16px'
+          }} />
+          <h2 className="text-heading" style={{ marginBottom: '8px' }}>
+            Extraction Failed
+          </h2>
+          <p className="text-body" style={{ 
+            color: 'var(--color-text-secondary)',
+            marginBottom: '24px'
+          }}>
+            {job.error || "We couldn't extract your brand profile. Please try again."}
           </p>
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
             <button
               onClick={() => router.push("/studios/new")}
-              style={{
-                height: '44px',
-                padding: '0 24px',
-                background: '#7A6CFF',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer'
-              }}
+              className="inline-flex items-center justify-center h-10 px-6 bg-ivy-600 text-white rounded-lg text-label font-medium hover:bg-ivy-700 transition-all duration-150 shadow-soft"
             >
               Try Another URL
             </button>
             <button
               onClick={() => router.push("/studios")}
-              style={{
-                height: '44px',
-                padding: '0 24px',
-                background: 'transparent',
-                color: '#F3F7FF',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer'
-              }}
+              className="inline-flex items-center justify-center h-10 px-6 bg-surface-2 border border-border-medium text-text-primary rounded-lg text-label hover:bg-surface-3 hover:border-border-strong transition-all duration-150"
             >
               Back to Studios
             </button>
@@ -152,41 +133,19 @@ export default function ProcessingPage() {
   }
 
   return (
-    <div style={{ maxWidth: '768px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '768px', margin: '0 auto', padding: '48px' }}>
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '8px', color: '#F3F7FF' }}>Analyzing Your Studio</h1>
-        <p style={{ color: '#A8B5CC' }}>
+        <h1 className="text-display" style={{ marginBottom: '8px' }}>
+          Analyzing Your Brand
+        </h1>
+        <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>
           This usually takes 30-60 seconds. We'll redirect you when ready.
         </p>
       </div>
 
-      <div style={{
-        background: 'rgba(15, 18, 25, 0.6)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        borderRadius: '12px',
-        padding: '32px'
-      }}>
-        {/* Progress bar */}
-        <div style={{ marginBottom: '32px' }}>
-          <div style={{ height: '8px', background: 'rgba(30, 35, 48, 0.5)', borderRadius: '9999px', overflow: 'hidden' }}>
-            <div
-              style={{
-                height: '100%',
-                background: 'linear-gradient(to right, #7A6CFF, #3CCBFF)',
-                transition: 'width 0.5s',
-                width: `${job.progress}%`
-              }}
-            />
-          </div>
-          <div style={{ marginTop: '8px', fontSize: '14px', color: '#A8B5CC', textAlign: 'center' }}>
-            {job.progress}% complete
-          </div>
-        </div>
-
+      <div className="card" style={{ padding: '32px' }}>
         {/* Stage timeline */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {stages.map((stage, index) => {
             const isComplete = index < currentStageIndex
             const isCurrent = index === currentStageIndex
@@ -200,43 +159,46 @@ export default function ProcessingPage() {
                   alignItems: 'flex-start',
                   gap: '16px',
                   padding: '16px',
-                  borderRadius: '12px',
-                  transition: 'all 0.3s',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'all 300ms ease',
                   background: isCurrent
-                    ? 'rgba(122, 108, 255, 0.1)'
+                    ? 'rgba(91, 123, 111, 0.1)'
                     : isComplete
-                    ? 'rgba(76, 217, 100, 0.1)'
-                    : 'rgba(30, 35, 48, 0.3)',
+                    ? 'rgba(91, 154, 127, 0.1)'
+                    : 'transparent',
                   border: isCurrent
-                    ? '1px solid rgba(122, 108, 255, 0.2)'
+                    ? '1px solid var(--color-ivy-500)'
                     : isComplete
-                    ? '1px solid rgba(76, 217, 100, 0.2)'
+                    ? '1px solid var(--color-success-500)'
                     : '1px solid transparent'
                 }}
               >
-                <div style={{ flexShrink: 0, marginTop: '4px' }}>
+                <div style={{ flexShrink: 0, marginTop: '2px' }}>
                   {isComplete ? (
-                    <CheckCircle2 style={{ width: '20px', height: '20px', color: '#4CD964' }} />
+                    <CheckCircle2 className="w-5 h-5" style={{ color: 'var(--color-success-500)' }} />
                   ) : isCurrent ? (
-                    <Loader2 style={{ width: '20px', height: '20px', color: '#7A6CFF' }} className="animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--color-ivy-500)' }} />
                   ) : (
-                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid rgba(168, 181, 204, 0.3)' }} />
+                    <div style={{ 
+                      width: '20px', 
+                      height: '20px', 
+                      borderRadius: '50%', 
+                      border: '2px solid var(--color-border-medium)' 
+                    }} />
                   )}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <h3
-                    style={{
-                      fontWeight: '500',
-                      color: isCurrent
-                        ? '#7A6CFF'
-                        : isComplete
-                        ? '#4CD964'
-                        : '#A8B5CC'
-                    }}
-                  >
+                  <h3 className="text-label" style={{
+                    color: isCurrent
+                      ? 'var(--color-ivy-500)'
+                      : isComplete
+                      ? 'var(--color-success-500)'
+                      : 'var(--color-text-secondary)',
+                    marginBottom: '4px'
+                  }}>
                     {stage.label}
                   </h3>
-                  <p style={{ fontSize: '14px', color: '#A8B5CC', marginTop: '4px' }}>
+                  <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
                     {stage.description}
                   </p>
                 </div>
@@ -246,10 +208,16 @@ export default function ProcessingPage() {
         </div>
 
         {/* Info box */}
-        <div style={{ marginTop: '32px', padding: '16px', borderRadius: '12px', background: 'rgba(60, 203, 255, 0.1)', border: '1px solid rgba(60, 203, 255, 0.2)' }}>
-          <p style={{ fontSize: '14px', color: '#3CCBFF' }}>
-            💡 We're analyzing your public website to detect colors, fonts, logos, and studio style. 
-            You'll review everything before we generate any campaigns.
+        <div style={{ 
+          marginTop: '32px', 
+          padding: '16px', 
+          borderRadius: 'var(--radius-lg)',
+          background: 'rgba(91, 123, 111, 0.1)', 
+          border: '1px solid rgba(91, 123, 111, 0.2)' 
+        }}>
+          <p className="text-body" style={{ color: 'var(--color-ivy-400)' }}>
+            We're analyzing your website to extract colors, fonts, logos, and brand style. 
+            You'll review everything before generating any assets.
           </p>
         </div>
       </div>

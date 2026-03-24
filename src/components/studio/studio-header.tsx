@@ -2,13 +2,16 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronDown, Settings } from "lucide-react"
+import { ChevronDown, Search, Bell, HelpCircle, Plus } from "lucide-react"
 
 interface StudioProfile {
   colors?: {
     primary?: string[]
     secondary?: string[]
     accent?: string[]
+  }
+  logos?: {
+    primary?: { url: string }
   }
   styleTraits?: string[]
 }
@@ -30,7 +33,10 @@ export default function StudioHeader({ studioId, studio, profile }: StudioHeader
   const router = useRouter()
   const [allStudios, setAllStudios] = useState<Studio[]>([])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchStudios()
@@ -41,16 +47,17 @@ export default function StudioHeader({ studioId, studio, profile }: StudioHeader
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false)
       }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchExpanded(false)
+        setSearchQuery("")
+      }
     }
 
-    if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
+    document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isDropdownOpen])
+  }, [])
 
   const fetchStudios = async () => {
     try {
@@ -71,208 +78,251 @@ export default function StudioHeader({ studioId, studio, profile }: StudioHeader
       ...(studioProfile.colors.secondary || []),
       ...(studioProfile.colors.accent || [])
     ]
-    return colors.slice(0, 6)
+    return colors.slice(0, 4)
   }
 
-  const colors = getStudioColors(profile)
-  const styleTraits = profile?.styleTraits?.slice(0, 3) || []
+  const recentStudios = allStudios.slice(0, 5)
+  const otherStudios = allStudios.slice(5)
 
   return (
-    <div style={{
-      background: 'rgba(15, 18, 25, 0.6)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      borderRadius: '12px',
-      padding: '20px 24px',
-      marginBottom: '24px'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+    <header className="h-16 border-b border-border-subtle bg-surface-1">
+      <div className="flex items-center justify-between px-6 h-full">
         {/* Left: Studio Switcher */}
         <div style={{ position: 'relative' }} ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              background: 'rgba(30, 35, 48, 0.5)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-              color: '#F3F7FF',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(122, 108, 255, 0.5)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
-            }}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-body font-medium text-text-primary hover:bg-surface-2 transition-all duration-150"
           >
-            {studio?.displayName || 'Studio'}
-            <ChevronDown style={{ width: '16px', height: '16px' }} />
+            {studio?.profile?.logos?.primary?.url && (
+              <img 
+                src={studio.profile.logos.primary.url} 
+                alt={studio.displayName}
+                style={{ height: '20px', width: 'auto', objectFit: 'contain' }}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.style.display = 'none'
+                }}
+              />
+            )}
+            <span>{studio?.displayName || 'Studio'}</span>
+            <ChevronDown className="w-4 h-4" />
           </button>
 
-          {/* Dropdown */}
-          {isDropdownOpen && allStudios.length > 0 && (
-            <div style={{
-              position: 'absolute',
-              top: 'calc(100% + 8px)',
-              left: 0,
-              minWidth: '280px',
-              maxHeight: '400px',
-              overflowY: 'auto',
-              background: 'rgba(15, 18, 25, 0.95)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '12px',
-              padding: '8px',
-              zIndex: 1000,
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
-            }}>
-              {allStudios.map((s) => {
-                const isActive = s.id === studioId
-                const studioColors = getStudioColors(s.profile)
-                
-                return (
-                  <div
-                    key={s.id}
-                    onClick={() => {
-                      if (!isActive) {
-                        router.push(`/studios/${s.id}/workspace`)
-                      }
-                      setIsDropdownOpen(false)
-                    }}
-                    style={{
-                      padding: '12px',
-                      borderRadius: '8px',
-                      background: isActive ? 'rgba(122, 108, 255, 0.1)' : 'transparent',
-                      border: isActive ? '1px solid rgba(122, 108, 255, 0.3)' : '1px solid transparent',
-                      cursor: isActive ? 'default' : 'pointer',
-                      marginBottom: '4px',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.background = 'transparent'
-                      }
-                    }}
-                  >
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#F3F7FF', marginBottom: '6px' }}>
-                      {s.displayName}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#A8B5CC', marginBottom: '8px' }}>
-                      {s.rootDomain}
-                    </div>
-                    {studioColors.length > 0 && (
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        {studioColors.map((color, idx) => (
-                          <div
-                            key={idx}
-                            style={{
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '4px',
-                              background: color,
-                              border: '1px solid rgba(255, 255, 255, 0.1)'
+          {/* Dropdown Flyout */}
+          {isDropdownOpen && (
+            <div className="absolute top-full left-0 mt-2 w-80 bg-surface-1 border border-border-medium rounded-lg shadow-soft-lg z-50" style={{ maxHeight: '480px', display: 'flex', flexDirection: 'column' }}>
+              {/* Recent Studios */}
+              {recentStudios.length > 0 && (
+                <div style={{ padding: '8px' }}>
+                  <div className="text-caption" style={{ color: 'var(--color-text-tertiary)', padding: '8px 12px' }}>
+                    Recent
+                  </div>
+                  {recentStudios.map((s) => {
+                    const isActive = s.id === studioId
+                    const studioColors = getStudioColors(s.profile)
+                    
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={() => {
+                          if (!isActive) {
+                            router.push(`/studios/${s.id}/generate`)
+                          }
+                          setIsDropdownOpen(false)
+                        }}
+                        className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-150"
+                        style={{
+                          background: isActive ? 'var(--color-surface-2)' : 'transparent',
+                          border: isActive ? '1px solid var(--color-ivy-500)' : '1px solid transparent',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = 'var(--color-surface-2)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = 'transparent'
+                          }
+                        }}
+                      >
+                        {s.profile?.logos?.primary?.url && (
+                          <img 
+                            src={s.profile.logos.primary.url} 
+                            alt={s.displayName}
+                            style={{ height: '24px', width: '24px', objectFit: 'contain' }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = 'none'
                             }}
                           />
-                        ))}
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="text-label" style={{ 
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {s.displayName}
+                          </div>
+                          <div className="text-caption" style={{ 
+                            color: 'var(--color-text-tertiary)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {s.rootDomain}
+                          </div>
+                        </div>
                       </div>
-                    )}
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Divider */}
+              {recentStudios.length > 0 && otherStudios.length > 0 && (
+                <div style={{ height: '1px', background: 'var(--color-border-subtle)', margin: '4px 0' }} />
+              )}
+
+              {/* Search Input */}
+              {otherStudios.length > 0 && (
+                <div style={{ padding: '8px' }}>
+                  <div style={{ position: 'relative' }}>
+                    <Search className="w-4 h-4" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-tertiary)' }} />
+                    <input
+                      type="text"
+                      placeholder="Search studios..."
+                      className="w-full h-9 pl-9 pr-3 bg-canvas border border-border-medium rounded-lg text-label text-text-primary placeholder:text-text-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ivy-500 transition-all duration-150"
+                    />
                   </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
+                </div>
+              )}
 
-        {/* Center: Color Palette & Style Traits */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flex: 1 }}>
-          {/* Color Palette */}
-          {colors.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {colors.map((color, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '6px',
-                    background: color,
-                    border: '2px solid rgba(255, 255, 255, 0.1)',
-                    position: 'relative',
-                    cursor: 'pointer'
-                  }}
-                  title={color}
-                />
-              ))}
-            </div>
-          )}
+              {/* All Studios */}
+              {otherStudios.length > 0 && (
+                <div style={{ padding: '8px', flex: 1, overflowY: 'auto' }}>
+                  {otherStudios.map((s) => {
+                    const isActive = s.id === studioId
+                    
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={() => {
+                          if (!isActive) {
+                            router.push(`/studios/${s.id}/generate`)
+                          }
+                          setIsDropdownOpen(false)
+                        }}
+                        className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-150"
+                        style={{
+                          background: isActive ? 'var(--color-surface-2)' : 'transparent',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = 'var(--color-surface-2)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = 'transparent'
+                          }
+                        }}
+                      >
+                        {s.profile?.logos?.primary?.url && (
+                          <img 
+                            src={s.profile.logos.primary.url} 
+                            alt={s.displayName}
+                            style={{ height: '24px', width: '24px', objectFit: 'contain' }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = 'none'
+                            }}
+                          />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="text-label" style={{ 
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {s.displayName}
+                          </div>
+                          <div className="text-caption" style={{ 
+                            color: 'var(--color-text-tertiary)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {s.rootDomain}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
 
-          {/* Style Traits */}
-          {styleTraits.length > 0 && (
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {styleTraits.map((trait, idx) => (
-                <span
-                  key={idx}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    background: 'rgba(122, 108, 255, 0.15)',
-                    color: '#A8B5CC',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    textTransform: 'capitalize'
+              {/* Divider */}
+              <div style={{ height: '1px', background: 'var(--color-border-subtle)', margin: '4px 0' }} />
+
+              {/* Create New Studio */}
+              <div style={{ padding: '8px' }}>
+                <button
+                  onClick={() => {
+                    router.push('/studios/new')
+                    setIsDropdownOpen(false)
                   }}
+                  className="w-full flex items-center justify-center gap-2 h-9 px-3 bg-ivy-600 text-white rounded-lg text-label font-medium hover:bg-ivy-700 transition-all duration-150"
                 >
-                  {trait}
-                </span>
-              ))}
+                  <Plus className="w-4 h-4" />
+                  Create new studio
+                </button>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Right: Edit Profile Button */}
-        <button
-          onClick={() => router.push(`/studios/${studioId}/review`)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
-            background: 'transparent',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px',
-            color: '#F3F7FF',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(122, 108, 255, 0.5)'
-            e.currentTarget.style.background = 'rgba(122, 108, 255, 0.1)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
-            e.currentTarget.style.background = 'transparent'
-          }}
-        >
-          <Settings style={{ width: '14px', height: '14px' }} />
-          Edit Profile
-        </button>
+        {/* Center: Search */}
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }} ref={searchRef}>
+          {isSearchExpanded ? (
+            <div style={{ position: 'relative', width: '320px' }}>
+              <Search className="w-4 h-4" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-tertiary)' }} />
+              <input
+                type="text"
+                placeholder={`Search ${studio?.displayName || 'studio'}...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+                className="w-full h-9 pl-9 pr-3 bg-surface-2 border border-border-medium rounded-lg text-label text-text-primary placeholder:text-text-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ivy-500 transition-all duration-150"
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsSearchExpanded(true)}
+              className="flex items-center justify-center w-9 h-9 rounded-lg text-text-tertiary hover:bg-surface-2 hover:text-text-secondary transition-all duration-150"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Right: Quick Actions */}
+        <div className="flex items-center gap-3">
+          <button 
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-text-tertiary hover:bg-surface-2 hover:text-text-secondary transition-all duration-150"
+            aria-label="Notifications"
+          >
+            <Bell className="w-4 h-4" />
+          </button>
+          <button 
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-text-tertiary hover:bg-surface-2 hover:text-text-secondary transition-all duration-150"
+            aria-label="Help"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
+        </div>
       </div>
-    </div>
+    </header>
   )
 }
