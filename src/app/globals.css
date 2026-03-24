@@ -326,3 +326,21 @@ select:focus-visible {
 .drawer-enter {
   animation: drawer-slide-in 300ms ease-out;
 }
+
+/* Custom select/dropdown styling */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: none;
+}
+
+select::-ms-expand {
+  display: none;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}

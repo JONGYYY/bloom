@@ -5,7 +5,9 @@ import { useParams } from "next/navigation"
 import ContextStrip from "@/components/studio/context-strip"
 import Suggestions from "@/components/studio/suggestions"
 import { AssetHistory } from "@/components/studio/asset-history"
-import { Image as ImageIcon, Sliders, Loader2, Sparkles } from "lucide-react"
+import ConceptTabs, { ConceptTab } from "@/components/studio/concept-tabs"
+import ConceptSelector, { ConceptTemplate } from "@/components/studio/concept-selector"
+import { Image as ImageIcon, Sliders, Loader2, Sparkles, ChevronDown, Lightbulb } from "lucide-react"
 
 export default function GeneratePage() {
   const params = useParams()
@@ -13,18 +15,53 @@ export default function GeneratePage() {
 
   const [studio, setStudio] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
-  const [prompt, setPrompt] = useState("")
-  const [aspectRatio, setAspectRatio] = useState("1:1")
-  const [quality, setQuality] = useState("draft")
-  const [variants, setVariants] = useState(2)
-  const [referenceImages, setReferenceImages] = useState<string[]>([])
+  
+  // Tab state
+  const [tabs, setTabs] = useState<ConceptTab[]>([
+    {
+      id: '1',
+      name: 'New Concept',
+      icon: '✨',
+      prompt: '',
+      parameters: {
+        aspectRatio: '1:1',
+        quality: 'draft',
+        variants: 2,
+        referenceImages: []
+      }
+    }
+  ])
+  const [activeTabId, setActiveTabId] = useState('1')
+  const [showConceptSelector, setShowConceptSelector] = useState(false)
+  
+  // Current tab data (derived from active tab)
+  const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0]
+  const [prompt, setPrompt] = useState(activeTab.prompt)
+  const [aspectRatio, setAspectRatio] = useState(activeTab.parameters.aspectRatio)
+  const [quality, setQuality] = useState(activeTab.parameters.quality)
+  const [variants, setVariants] = useState(activeTab.parameters.variants)
+  const [referenceImages, setReferenceImages] = useState<string[]>(activeTab.parameters.referenceImages)
+  
+  const [imageAssistEnabled, setImageAssistEnabled] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
   useEffect(() => {
     fetchStudioData()
   }, [studioId])
+
+  // Sync local state with active tab
+  useEffect(() => {
+    if (activeTab) {
+      setPrompt(activeTab.prompt)
+      setAspectRatio(activeTab.parameters.aspectRatio)
+      setQuality(activeTab.parameters.quality)
+      setVariants(activeTab.parameters.variants)
+      setReferenceImages(activeTab.parameters.referenceImages)
+    }
+  }, [activeTabId])
 
   const fetchStudioData = async () => {
     try {
@@ -46,6 +83,63 @@ export default function GeneratePage() {
     } catch (error) {
       console.error('Error fetching studio data:', error)
     }
+  }
+
+  // Update active tab when local state changes
+  const updateActiveTab = () => {
+    setTabs(prevTabs => 
+      prevTabs.map(tab => 
+        tab.id === activeTabId 
+          ? { 
+              ...tab, 
+              prompt,
+              parameters: { aspectRatio, quality, variants, referenceImages }
+            }
+          : tab
+      )
+    )
+  }
+
+  useEffect(() => {
+    updateActiveTab()
+  }, [prompt, aspectRatio, quality, variants, referenceImages])
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTabId(tabId)
+  }
+
+  const handleTabClose = (tabId: string) => {
+    if (tabs.length === 1) return
+    
+    const tabIndex = tabs.findIndex(t => t.id === tabId)
+    const newTabs = tabs.filter(t => t.id !== tabId)
+    setTabs(newTabs)
+    
+    if (activeTabId === tabId) {
+      const newActiveIndex = Math.max(0, tabIndex - 1)
+      setActiveTabId(newTabs[newActiveIndex].id)
+    }
+  }
+
+  const handleNewTab = () => {
+    setShowConceptSelector(true)
+  }
+
+  const handleSelectTemplate = (template: ConceptTemplate) => {
+    const newTab: ConceptTab = {
+      id: Date.now().toString(),
+      name: template.name,
+      icon: template.icon,
+      prompt: template.prompt,
+      parameters: {
+        aspectRatio: template.parameters?.aspectRatio || '1:1',
+        quality: template.parameters?.quality || 'draft',
+        variants: 2,
+        referenceImages: []
+      }
+    }
+    setTabs(prev => [...prev, newTab])
+    setActiveTabId(newTab.id)
   }
 
   const handleGenerate = async () => {
@@ -89,6 +183,7 @@ export default function GeneratePage() {
 
   const handleApplySuggestion = (suggestion: string) => {
     setPrompt(suggestion)
+    setShowSuggestions(false)
   }
 
   const brandKitStatus = profile ? "complete" : "incomplete"
@@ -113,13 +208,50 @@ export default function GeneratePage() {
         padding: '0 48px 48px',
         width: '100%'
       }} className="px-6 md:px-12">
+        {/* Concept Tabs */}
+        <ConceptTabs
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onTabChange={handleTabChange}
+          onTabClose={handleTabClose}
+          onNewTab={handleNewTab}
+        />
+
         {/* Prompt Composer */}
         <div className="bg-surface-1 rounded-xl border border-border-subtle p-6" style={{ marginBottom: '48px' }}>
+          {/* Top row: Image Assist toggle and AI Assist button */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            marginBottom: '12px'
+          }}>
+            {/* Image Assist toggle */}
+            <button
+              onClick={() => setImageAssistEnabled(!imageAssistEnabled)}
+              className={`flex items-center gap-2 h-9 px-3 rounded-lg text-label font-medium transition-all duration-150 ${
+                imageAssistEnabled
+                  ? 'bg-ivy-600 text-white'
+                  : 'bg-surface-2 border border-border-medium text-text-secondary hover:text-text-primary hover:border-border-strong'
+              }`}
+            >
+              <ImageIcon className="w-4 h-4" />
+              <span>Image Assist</span>
+            </button>
+
+            {/* AI Assist button */}
+            <button
+              onClick={() => setShowSuggestions(!showSuggestions)}
+              className="flex items-center gap-2 h-9 px-3 bg-transparent text-text-secondary hover:bg-surface-2 hover:text-text-primary rounded-lg transition-all duration-150"
+              title="Get AI suggestions"
+            >
+              <Lightbulb className="w-4 h-4" />
+              <span className="text-label">Suggestions</span>
+            </button>
+          </div>
+
           {/* Prompt field */}
           <div style={{ marginBottom: '16px' }}>
-            <label className="text-label" style={{ display: 'block', marginBottom: '8px' }}>
-              What would you like to create?
-            </label>
             <textarea 
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -151,57 +283,48 @@ export default function GeneratePage() {
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between pt-4 border-t border-border-subtle gap-3">
             {/* Left: Secondary controls */}
             <div className="flex items-center gap-2 overflow-x-auto">
-              {/* Reference Images Button */}
-              <button
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center gap-2 h-10 px-3 bg-surface-2 border border-border-medium text-text-primary rounded-lg text-label hover:bg-surface-3 hover:border-border-strong transition-all duration-150 whitespace-nowrap"
-              >
-                <ImageIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">References</span>
-              </button>
-
-              {/* Aspect Ratio Selector */}
-              <div className="flex items-center gap-1 bg-surface-2 border border-border-medium rounded-lg p-1">
-                {["1:1", "4:5", "16:9"].map((ratio) => (
-                  <button
-                    key={ratio}
-                    onClick={() => setAspectRatio(ratio)}
-                    className={`px-2 md:px-3 h-8 rounded text-caption font-medium transition-all duration-150 ${
-                      aspectRatio === ratio
-                        ? "bg-ivy-600 text-white"
-                        : "text-text-secondary hover:text-text-primary"
-                    }`}
-                  >
-                    {ratio}
-                  </button>
-                ))}
+              {/* Aspect Ratio Dropdown */}
+              <div className="relative">
+                <select
+                  value={aspectRatio}
+                  onChange={(e) => setAspectRatio(e.target.value)}
+                  className="h-10 pl-3 pr-8 bg-surface-2 border border-border-medium text-text-primary rounded-lg text-label hover:bg-surface-3 hover:border-border-strong transition-all duration-150 appearance-none cursor-pointer"
+                  style={{ 
+                    backgroundImage: 'none',
+                    minWidth: '100px'
+                  }}
+                >
+                  <option value="1:1">1:1 Square</option>
+                  <option value="4:5">4:5 Portrait</option>
+                  <option value="16:9">16:9 Landscape</option>
+                  <option value="9:16">9:16 Story</option>
+                  <option value="2:3">2:3 Tall</option>
+                </select>
+                <ChevronDown 
+                  className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary" 
+                />
               </div>
 
-              {/* Quality Selector */}
-              <div className="flex items-center gap-1 bg-surface-2 border border-border-medium rounded-lg p-1">
-                <button
-                  onClick={() => setQuality("draft")}
-                  className={`px-2 md:px-3 h-8 rounded text-caption font-medium transition-all duration-150 whitespace-nowrap ${
-                    quality === "draft"
-                      ? "bg-ivy-600 text-white"
-                      : "text-text-secondary hover:text-text-primary"
-                  }`}
+              {/* Quality Dropdown */}
+              <div className="relative">
+                <select
+                  value={quality}
+                  onChange={(e) => setQuality(e.target.value)}
+                  className="h-10 pl-3 pr-8 bg-surface-2 border border-border-medium text-text-primary rounded-lg text-label hover:bg-surface-3 hover:border-border-strong transition-all duration-150 appearance-none cursor-pointer"
+                  style={{ 
+                    backgroundImage: 'none',
+                    minWidth: '100px'
+                  }}
                 >
-                  Draft
-                </button>
-                <button
-                  onClick={() => setQuality("final")}
-                  className={`px-2 md:px-3 h-8 rounded text-caption font-medium transition-all duration-150 whitespace-nowrap ${
-                    quality === "final"
-                      ? "bg-ivy-600 text-white"
-                      : "text-text-secondary hover:text-text-primary"
-                  }`}
-                >
-                  Final
-                </button>
+                  <option value="draft">Draft</option>
+                  <option value="final">Final</option>
+                </select>
+                <ChevronDown 
+                  className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary" 
+                />
               </div>
 
-              {/* Variants Selector */}
+              {/* Variants Selector (keep as segmented control) */}
               <div className="flex items-center gap-1 bg-surface-2 border border-border-medium rounded-lg p-1">
                 {[1, 2, 4].map((num) => (
                   <button
@@ -221,13 +344,6 @@ export default function GeneratePage() {
             
             {/* Right: Primary action */}
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="hidden md:flex items-center gap-2 h-10 px-4 text-text-secondary rounded-lg text-label hover:bg-surface-2 hover:text-text-primary transition-all duration-150"
-              >
-                <Sliders className="w-4 h-4" />
-                More options
-              </button>
               <button
                 onClick={() => handleGenerate()}
                 disabled={isGenerating || !prompt.trim()}
@@ -249,11 +365,20 @@ export default function GeneratePage() {
           </div>
         </div>
 
-        {/* Suggestions */}
-        <Suggestions 
-          studioId={studioId}
-          studioName={studio?.displayName || "Studio"}
-          onApplySuggestion={handleApplySuggestion}
+        {/* Suggestions (conditional) */}
+        {showSuggestions && (
+          <Suggestions 
+            studioId={studioId}
+            studioName={studio?.displayName || "Studio"}
+            onApplySuggestion={handleApplySuggestion}
+          />
+        )}
+
+        {/* Concept Selector Modal */}
+        <ConceptSelector
+          isOpen={showConceptSelector}
+          onClose={() => setShowConceptSelector(false)}
+          onSelectTemplate={handleSelectTemplate}
         />
 
         {/* Results / Generation History */}
