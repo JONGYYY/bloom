@@ -5,7 +5,7 @@ import { useParams } from "next/navigation"
 import ContextStrip from "@/components/studio/context-strip"
 import Suggestions from "@/components/studio/suggestions"
 import { AssetHistory } from "@/components/studio/asset-history"
-import { Image as ImageIcon, Sliders, Loader2 } from "lucide-react"
+import { Image as ImageIcon, Sliders, Loader2, Sparkles } from "lucide-react"
 
 export default function GeneratePage() {
   const params = useParams()
