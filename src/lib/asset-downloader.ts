@@ -230,10 +230,7 @@ export async function downloadAssetsBatch(
           seenHashes.add(result.hash)
           successCount++
         } else {
-          console.log(`[Batch Downloader] ⚠️  Skipped DUPLICATE asset:`)
-          console.log(`[Batch Downloader]    Type: ${result.type}`)
-          console.log(`[Batch Downloader]    Hash: ${result.hash.substring(0, 8)}`)
-          console.log(`[Batch Downloader]    URL: ${result.originalUrl.substring(0, 80)}`)
+          console.log(`[Batch Downloader] ⚠️  Skipped DUPLICATE asset (hash: ${result.hash.substring(0, 8)})`)
         }
       } else {
         failCount++
