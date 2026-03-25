@@ -147,6 +147,27 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
         }
       }
 
+      // Determine element location on page
+      const getElementLocation = (el: Element): string => {
+        const rect = el.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        
+        // Check if in header/nav
+        if (el.closest('header, nav')) return 'header'
+        if (el.closest('footer')) return 'footer'
+        
+        if (rect.top < 100) return 'header'
+        if (rect.top < viewportHeight) return 'hero'
+        if (rect.top < viewportHeight * 2) return 'content'
+        return 'footer'
+      }
+
+      // Get parent context
+      const getParentContext = (el: Element): string => {
+        const parent = el.closest('header, nav, main, footer, aside, section')
+        return parent?.tagName.toLowerCase() || 'unknown'
+      }
+
       // Extract all colors from the page
       const extractColors = () => {
         const colorMap = new Map<string, number>()
@@ -181,20 +202,109 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
         return Array.from(colorMap.entries())
           .sort((a, b) => b[1] - a[1])
           .map(([color, count]) => ({ color, count }))
-          .slice(0, 20) // Top 20 most frequent colors
+          .slice(0, 30) // Top 30 most frequent colors
+      }
+
+      // Extract ALL images with full context
+      const extractAllImages = () => {
+        const images: any[] = []
+        
+        // 1. Standard img tags
+        document.querySelectorAll('img').forEach(img => {
+          images.push({
+            type: 'img',
+            src: img.src,
+            srcset: img.srcset || '',
+            alt: img.alt || '',
+            width: img.naturalWidth || img.width,
+            height: img.naturalHeight || img.height,
+            className: img.className || '',
+            id: img.id || '',
+            location: getElementLocation(img),
+            parentContext: getParentContext(img),
+            isLazyLoaded: img.loading === 'lazy',
+          })
+        })
+        
+        // 2. CSS background images
+        document.querySelectorAll('*').forEach(el => {
+          const bg = window.getComputedStyle(el).backgroundImage
+          if (bg && bg !== 'none' && bg.includes('url(')) {
+            const urlMatch = bg.match(/url\(['"]?([^'"]+)['"]?\)/)
+            if (urlMatch && urlMatch[1]) {
+              images.push({
+                type: 'background',
+                src: urlMatch[1],
+                width: el.clientWidth,
+                height: el.clientHeight,
+                location: getElementLocation(el),
+                parentContext: getParentContext(el),
+                className: el.className || '',
+              })
+            }
+          }
+        })
+        
+        // 3. SVG elements (inline)
+        document.querySelectorAll('svg').forEach(svg => {
+          const bbox = svg.getBBox ? svg.getBBox() : { width: 0, height: 0 }
+          images.push({
+            type: 'svg',
+            content: svg.outerHTML,
+            width: bbox.width || svg.clientWidth,
+            height: bbox.height || svg.clientHeight,
+            location: getElementLocation(svg),
+            parentContext: getParentContext(svg),
+            className: svg.className.baseVal || '',
+            id: svg.id || '',
+          })
+        })
+        
+        return images
+      }
+
+      // Extract favicons and meta images
+      const extractMetaAssets = () => {
+        const metaAssets: any[] = []
+        
+        // Favicons
+        const faviconLinks = document.querySelectorAll('link[rel*="icon"]')
+        faviconLinks.forEach(link => {
+          const href = (link as HTMLLinkElement).href
+          if (href) {
+            metaAssets.push({
+              type: 'favicon',
+              src: href,
+              rel: link.getAttribute('rel'),
+              sizes: link.getAttribute('sizes') || '',
+            })
+          }
+        })
+        
+        // Open Graph images
+        const ogImage = document.querySelector('meta[property="og:image"]')
+        if (ogImage) {
+          metaAssets.push({
+            type: 'og-image',
+            src: ogImage.getAttribute('content') || '',
+          })
+        }
+        
+        // Twitter Card images
+        const twitterImage = document.querySelector('meta[name="twitter:image"]')
+        if (twitterImage) {
+          metaAssets.push({
+            type: 'twitter-image',
+            src: twitterImage.getAttribute('content') || '',
+          })
+        }
+        
+        return metaAssets
       }
 
       // Get header/nav elements
       const header = document.querySelector('header') || document.querySelector('nav')
       const headerStyles = header ? getComputedStylesForElement(header) : null
-
-      // Get all images (potential logos)
-      const images = Array.from(document.querySelectorAll('img')).map(img => ({
-        src: img.src,
-        alt: img.alt,
-        width: img.width,
-        height: img.height,
-      }))
 
       // Get body styles
       const bodyStyles = getComputedStylesForElement(document.body)
@@ -214,8 +324,10 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
         headingStyles,
         buttonStyles: buttons,
         extractedColors: extractColors(),
-        images: images.slice(0, 10), // Limit to first 10 images
+        allImages: extractAllImages(),
+        metaAssets: extractMetaAssets(),
         title: document.title,
+        url: window.location.href,
       }
     })
 

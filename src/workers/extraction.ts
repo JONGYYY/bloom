@@ -2,6 +2,7 @@ import { Worker, Job } from 'bullmq'
 import { connection } from './queue'
 import { prisma } from '@/lib/db'
 import OpenAI from 'openai'
+import { downloadAssetsBatch, AssetToDownload, DownloadedAsset } from '@/lib/asset-downloader'
 
 interface ExtractionJobData {
   studioId: string
@@ -32,9 +33,19 @@ async function processExtractionJob(job: Job<ExtractionJobData>) {
     })
 
     // Prepare prompt for GPT-4 Vision
-    const imageList = domData.images?.map((img: any, idx: number) => 
-      `${idx + 1}. ${img.src} (alt: "${img.alt}", ${img.width}x${img.height})`
-    ).join('\n') || 'No images found'
+    const allImages = domData.allImages || []
+    const metaAssets = domData.metaAssets || []
+    
+    const imageList = allImages.map((img: any, idx: number) => {
+      if (img.type === 'svg') {
+        return `${idx + 1}. [SVG] ${img.width}x${img.height} in ${img.location} (class: "${img.className}")`
+      }
+      return `${idx + 1}. ${img.src} (alt: "${img.alt}", ${img.width}x${img.height}, location: ${img.location}, context: ${img.parentContext})`
+    }).join('\n') || 'No images found'
+    
+    const metaAssetList = metaAssets.map((asset: any, idx: number) => 
+      `${idx + 1}. [${asset.type}] ${asset.src}`
+    ).join('\n') || 'No meta assets found'
 
     const colorList = domData.extractedColors?.map((c: any, idx: number) => 
       `${c.color} (used ${c.count} times)`
@@ -70,13 +81,18 @@ ${colorList}
 
 3. Logo Candidates:
    - From the images list below, identify which ones are likely brand logos
-   - Return the exact URL from the list
+   - Return the exact URL from the list (or indicate if it's an SVG with its index)
    - Rank by confidence (high/medium/low)
    - Logos are typically in the header/nav area, relatively small (under 200px), and contain brand identity
-   - Include up to 3 most likely logo candidates
+   - Include up to 5 most likely logo candidates (including SVGs)
+   - For SVGs, return: { "type": "svg", "index": N, "confidence": "high" }
+   - For images, return: { "type": "image", "url": "exact-url", "confidence": "high" }
 
 Images found on page:
 ${imageList}
+
+Meta assets (favicons, og:image, etc.):
+${metaAssetList}
 
 4. Style Traits:
    - Select 2-4 applicable traits from: minimal, premium, playful, bold, editorial, soft, sporty, luxe
@@ -88,6 +104,15 @@ Additional context from DOM:
 - Body styles: ${JSON.stringify(domData.bodyStyles)}
 - Heading styles: ${JSON.stringify(domData.headingStyles)}
 - Button styles: ${JSON.stringify(domData.buttonStyles)}
+
+4. Brand Assets to Download:
+   - Identify ALL assets that should be downloaded and stored
+   - Categorize each asset by type: logo, icon, illustration, hero_image, product_photo
+   - For each asset, provide:
+     - Source (URL or SVG index)
+     - Asset type classification
+     - Priority (high/medium/low)
+     - Reason for inclusion
 
 Return a JSON object with this EXACT structure:
 {
@@ -111,15 +136,29 @@ Return a JSON object with this EXACT structure:
   },
   "logos": {
     "candidates": [
-      { "url": "exact-url-from-images-list", "confidence": "high" | "medium" | "low" }
+      { "type": "image" | "svg", "url": "exact-url" | null, "svgIndex": number | null, "confidence": "high" | "medium" | "low" }
     ],
     "selected": null
   },
+  "assetsToDownload": [
+    {
+      "source": "url-or-svg-index",
+      "type": "logo" | "icon" | "illustration" | "hero_image" | "product_photo",
+      "priority": "high" | "medium" | "low",
+      "reason": "explanation",
+      "metadata": {
+        "location": "header" | "hero" | "content",
+        "width": number,
+        "height": number
+      }
+    }
+  ],
   "styleTraits": ["trait1", "trait2"],
   "provenance": {
     "colors": "Explain which page areas these colors were found in",
     "fonts": "Explain where these fonts were detected",
     "logos": "Explain why these images were identified as logos",
+    "assets": "Explain the asset selection strategy",
     "styleTraits": "Explain the reasoning for selected traits"
   }
 }`
@@ -158,7 +197,65 @@ Return a JSON object with this EXACT structure:
       where: { id: jobId },
       data: {
         stage: 'building',
-        progress: 80,
+        progress: 70,
+      },
+    })
+
+    // Download and store brand assets
+    console.log(`[Extraction] Downloading brand assets...`)
+    const assetsToDownload: AssetToDownload[] = []
+    
+    // Process assets from OpenAI response
+    if (extractedData.assetsToDownload && Array.isArray(extractedData.assetsToDownload)) {
+      for (const asset of extractedData.assetsToDownload) {
+        // Handle SVG assets
+        if (asset.source.startsWith('svg-')) {
+          const svgIndex = parseInt(asset.source.replace('svg-', ''))
+          const svgImage = allImages.find((img: any, idx: number) => 
+            img.type === 'svg' && idx === svgIndex
+          )
+          
+          if (svgImage && svgImage.content) {
+            assetsToDownload.push({
+              source: asset.source,
+              type: 'svg',
+              priority: asset.priority || 'medium',
+              reason: asset.reason,
+              metadata: {
+                svgContent: svgImage.content,
+                width: svgImage.width,
+                height: svgImage.height,
+                location: svgImage.location,
+              },
+            })
+          }
+        } else {
+          // Handle regular image URLs
+          assetsToDownload.push({
+            source: asset.source,
+            type: asset.type || 'illustration',
+            priority: asset.priority || 'medium',
+            reason: asset.reason,
+            metadata: asset.metadata,
+          })
+        }
+      }
+    }
+
+    // Download assets in batches
+    let downloadedAssets: DownloadedAsset[] = []
+    if (assetsToDownload.length > 0) {
+      console.log(`[Extraction] Downloading ${assetsToDownload.length} assets...`)
+      downloadedAssets = await downloadAssetsBatch(assetsToDownload, studioId, 3)
+      console.log(`[Extraction] Successfully downloaded ${downloadedAssets.length} assets`)
+    }
+
+    // Update progress
+    await prisma.generationJob.update({
+      where: { id: jobId },
+      data: {
+        stage: 'building',
+        progress: 85,
       },
     })
 
@@ -174,6 +271,41 @@ Return a JSON object with this EXACT structure:
         isConfirmed: false,
       },
     })
+
+    // Create BrandAsset records for downloaded assets
+    if (downloadedAssets.length > 0) {
+      console.log(`[Extraction] Creating ${downloadedAssets.length} BrandAsset records...`)
+      
+      for (const asset of downloadedAssets) {
+        // Find the original asset request to get type and metadata
+        const originalAsset = assetsToDownload.find(a => 
+          a.source === asset.originalUrl || 
+          (a.metadata?.svgContent && asset.originalUrl === 'inline-svg')
+        )
+
+        await prisma.brandAsset.create({
+          data: {
+            studioId,
+            sourceUrl: asset.originalUrl,
+            storageKey: asset.storageKey,
+            type: originalAsset?.type || 'illustration',
+            metadata: {
+              width: asset.width,
+              height: asset.height,
+              format: asset.format,
+              size: asset.size,
+              hash: asset.hash,
+              priority: originalAsset?.priority || 'medium',
+              reason: originalAsset?.reason || '',
+              location: originalAsset?.metadata?.location || 'unknown',
+              extractedFrom: url,
+            },
+          },
+        })
+      }
+      
+      console.log(`[Extraction] Created ${downloadedAssets.length} BrandAsset records`)
+    }
 
     // Update studio status
     await prisma.studio.update({
