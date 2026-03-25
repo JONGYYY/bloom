@@ -113,7 +113,10 @@ export async function downloadAndUploadAsset(
 
     const url = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${storageKey}`
 
-    console.log(`[Downloader] ✓ Successfully uploaded ${asset.type} to S3: ${storageKey}`)
+    console.log(`[Downloader] ✓ Successfully uploaded ${asset.type} to S3`)
+    console.log(`[Downloader]   Storage Key: ${storageKey}`)
+    console.log(`[Downloader]   Public URL: ${url}`)
+    console.log(`[Downloader]   Bucket: ${process.env.AWS_S3_BUCKET}, Region: ${process.env.AWS_REGION || 'us-east-1'}`)
 
     return {
       storageKey,

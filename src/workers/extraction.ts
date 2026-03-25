@@ -3,6 +3,7 @@ import { connection } from './queue'
 import { prisma } from '@/lib/db'
 import OpenAI from 'openai'
 import { downloadAssetsBatch, AssetToDownload, DownloadedAsset } from '@/lib/asset-downloader'
+import { selectBrandColors, formatColorsForStorage } from '@/lib/color-selector'
 
 interface ExtractionJobData {
   studioId: string
@@ -56,35 +57,7 @@ async function processExtractionJob(job: Job<ExtractionJobData>) {
 
     const prompt = `Analyze this brand website screenshot and extract the following brand elements:
 
-1. Color Palette - IMPORTANT INSTRUCTIONS:
-   Below is a list of colors extracted from the page's CSS, sorted by frequency (most used first).
-   
-   Your task is to:
-   - Use FREQUENCY as the PRIMARY selection factor
-   - Only include colors that appear frequently (have high count values)
-   - EXCLUDE colors with very low frequency (count < 10)
-   - Group VERY SIMILAR colors together (within 5-10% similarity) and pick the most frequent one
-     * Example: #FF90E8 and #FF88E5 are too similar, pick the one with higher count
-     * BUT: White (#FFFFFF) and Gray (#CCCCCC) are NOT similar - keep both if frequent
-     * AND: Light gray (#F5F5F5) and Dark gray (#333333) are NOT similar - keep both if frequent
-   - DO NOT filter out neutrals/grays/black/white - if they're frequent, include them
-   - Aim for 4-10 TOTAL colors across all categories based on frequency
-   
-   Extracted colors from page (sorted by frequency, highest first):
-${colorList}
-   
-   Selection strategy:
-   1. Start with the most frequent colors (top 15-20)
-   2. Group very similar colors (pick most frequent from each group)
-   3. Categorize by usage pattern and frequency:
-      - PRIMARY (2-5 colors): Most frequent colors that define the brand
-      - SECONDARY (1-3 colors): Moderately frequent supporting colors
-      - ACCENT (1-2 colors): Less frequent but distinctive highlight colors
-   
-   Return EXACT hex codes from the list above.
-   Provide confidence level (high/medium/low) based on frequency count.
-
-2. Typography:
+1. Typography:
    - Identify the heading font family and weight (from the largest, most prominent headings)
    - Identify the body text font family and weight (from paragraph text)
    - Use the font family names from the DOM data provided below
@@ -130,11 +103,6 @@ ${metaAssetList}
      It pairs [typography description] with [color description], set against [background description]. 
      [Visual elements description] imbue the brand with [personality traits], creating 
      [overall impression]."
-
-7. Color Provenance:
-   - For each selected color, note where it was primarily found
-   - Sources: "text", "backgrounds", "illustrations", "buttons", "accents", "header", "footer"
-   - Track frequency: "high", "medium", "low"
 
 Additional context from DOM:
 - Title: ${domData.title}
@@ -226,12 +194,6 @@ Return a JSON object with this EXACT structure:
     "tagline": "Brand tagline or null",
     "description": "Brief 1-2 sentence description"
   },
-  "colors": {
-    "primary": ["#HEX1", "#HEX2"],
-    "secondary": ["#HEX3"],
-    "accent": ["#HEX4"],
-    "confidence": "high" | "medium" | "low"
-  },
   "fonts": {
     "heading": {
       "family": "Font Name",
@@ -252,10 +214,6 @@ Return a JSON object with this EXACT structure:
   },
   "toneKeywords": ["Playful", "Optimistic", "Modern", "Energetic", "Approachable"],
   "aestheticDescription": "Rich 2-4 sentence description of the brand's visual aesthetic...",
-  "colorProvenance": {
-    "#HEX1": { "source": "illustrations", "frequency": "high" },
-    "#HEX2": { "source": "buttons", "frequency": "medium" }
-  },
   "assetsToDownload": [
     {
       "source": "url-or-svg-index",
@@ -271,7 +229,6 @@ Return a JSON object with this EXACT structure:
   ],
   "styleTraits": ["trait1", "trait2"],
   "provenance": {
-    "colors": "Explain which page areas these colors were found in",
     "fonts": "Explain where these fonts were detected",
     "logos": "Explain why these images were identified as logos",
     "assets": "Explain the asset selection strategy",
@@ -391,17 +348,32 @@ Return a JSON object with this EXACT structure:
       },
     })
 
+    // Select colors deterministically using frequency-based algorithm
+    console.log(`[Extraction] Selecting colors deterministically from ${domData.extractedColors?.length || 0} extracted colors`)
+    const colorSelection = selectBrandColors(domData.extractedColors || [], {
+      minFrequency: 10,
+      maxColors: 10,
+      similarityThreshold: 8,
+    })
+    const colors = formatColorsForStorage(colorSelection)
+    console.log(`[Extraction] Selected colors:`, colors)
+
     // Create studio profile with enhanced brand identity
     await prisma.studioProfile.create({
       data: {
         studioId,
-        colors: extractedData.colors || {},
+        colors: colors,
         fonts: extractedData.fonts || {},
         logos: extractedData.logos || { candidates: [], selected: null },
         styleTraits: extractedData.styleTraits || [],
         provenance: {
           ...extractedData.provenance || {},
-          colorProvenance: extractedData.colorProvenance || {}
+          colorSelection: {
+            algorithm: 'frequency-based',
+            totalAnalyzed: colorSelection.metadata.totalColorsAnalyzed,
+            groupsFormed: colorSelection.metadata.groupsFormed,
+            excluded: colorSelection.metadata.colorsExcluded,
+          }
         },
         brandName: extractedData.brandIdentity?.name || null,
         tagline: extractedData.brandIdentity?.tagline || null,

@@ -54,10 +54,16 @@ export async function GET(
     const bucket = process.env.AWS_S3_BUCKET || 'bloom-assets'
     const region = process.env.AWS_REGION || 'us-east-1'
     
+    console.log(`[Assets API] Constructing URLs with bucket: ${bucket}, region: ${region}`)
+    
     const assetsWithUrls = assets.map(asset => ({
       ...asset,
       url: `https://${bucket}.s3.${region}.amazonaws.com/${asset.storageKey}`
     }))
+
+    if (assetsWithUrls.length > 0) {
+      console.log(`[Assets API] Sample URL: ${assetsWithUrls[0].url}`)
+    }
 
     return NextResponse.json({ assets: assetsWithUrls })
   } catch (error) {
