@@ -6,7 +6,8 @@ import { S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
-import { compressBrandProfile, assemblePrompt, isAssetMetadata } from '@/lib/prompt'
+import { compressBrandProfile, isAssetMetadata } from '@/lib/prompt'
+import { runGenerationPipeline, type GenerationInput, type PipelineContext, type BrandAssetWithMetadata, type CompressedBrandProfile } from '@/lib/generation-pipeline'
 
 interface GenerationJobData {
   generationId: string
@@ -121,8 +122,12 @@ async function processGenerationJob(job: Job<GenerationJobData>) {
       throw new Error('Studio not found')
     }
 
-    // NEW PIPELINE: Layer 1 - Compress brand profile
-    const brandProfile = studioWithProfile.profile 
+    // ========================================================================
+    // NEW 4-STAGE PIPELINE
+    // ========================================================================
+    
+    // Prepare brand profile (compressed)
+    const brandProfile: CompressedBrandProfile | null = studioWithProfile.profile 
       ? compressBrandProfile(studioWithProfile as any)
       : null
 
@@ -134,30 +139,73 @@ async function processGenerationJob(job: Job<GenerationJobData>) {
       })
     }
 
-    // NEW PIPELINE: Layer 4 - Assemble prompt with reference selection
-    const ideaTemplateId = parameters.outputType || 'social-media-ad'
-    
-    const assembled = await assemblePrompt({
-      userPrompt: prompt,
-      ideaTemplateId,
-      brandProfile,
-      brandAssets: studioWithProfile.brandAssets.filter((a: any) => a.metadata && isAssetMetadata(a.metadata)),
-      parameters: {
-        artStyle: parameters.aesthetic,
-        mood: parameters.mood,
-        composition: parameters.composition,
-        textPresence: parameters.textPresence,
-        brandStrength: parameters.brandStrength,
-        userReferences: parameters.referenceImages,
-      }
-    })
+    // Prepare brand assets with metadata
+    const brandAssets: BrandAssetWithMetadata[] = studioWithProfile.brandAssets
+      .filter((a: any) => a.metadata && isAssetMetadata(a.metadata))
+      .map((a: any) => ({
+        id: a.id,
+        type: a.type,
+        url: `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${a.storageKey}`,
+        storageKey: a.storageKey,
+        metadata: a.metadata,
+      }))
 
+    // Build pipeline context
+    const pipelineContext: PipelineContext = {
+      studioId,
+      brandProfile,
+      availableAssets: brandAssets,
+    }
+
+    // Build pipeline input
+    const pipelineInput: GenerationInput = parameters.outputType
+      ? {
+          type: 'idea_selection',
+          ideaTemplateId: parameters.outputType,
+          subject: prompt,
+          parameters: {
+            aspectRatio: (parameters.aspectRatio as any) || '1:1',
+            quality: parameters.quality === 'hd' ? 'final' : 'draft',
+            variants: parameters.variants || 1,
+            artStyle: parameters.aesthetic,
+            mood: parameters.mood,
+            composition: parameters.composition,
+            textPresence: (parameters.textPresence as any) || 'minimal',
+            brandStrength: (parameters.brandStrength as any) || 'balanced',
+          },
+        }
+      : {
+          type: 'raw_prompt',
+          prompt: prompt,
+          parameters: {
+            aspectRatio: (parameters.aspectRatio as any) || '1:1',
+            quality: parameters.quality === 'hd' ? 'final' : 'draft',
+            variants: parameters.variants || 1,
+            artStyle: parameters.aesthetic,
+            mood: parameters.mood,
+            composition: parameters.composition,
+            textPresence: (parameters.textPresence as any) || 'minimal',
+            brandStrength: (parameters.brandStrength as any) || 'balanced',
+          },
+        }
+
+    // Run the 4-stage pipeline
+    console.log(`[Generation] Running 4-stage pipeline...`)
+    const pipelineResult = await runGenerationPipeline(pipelineInput, pipelineContext)
+
+    if (!pipelineResult.success || !pipelineResult.assembledPrompt) {
+      throw new Error(`Pipeline failed: ${pipelineResult.error}`)
+    }
+
+    const assembled = pipelineResult.assembledPrompt
     const enhancedPrompt = assembled.finalPrompt
 
-    console.log(`[Generation] Assembled prompt (${assembled.promptMetadata.tokenCount} tokens):`, enhancedPrompt)
-    console.log(`[Generation] Selected ${assembled.selectedReferenceAssets.length} reference assets`)
-    console.log(`[Generation] Applied brand fields:`, assembled.appliedBrandFields)
-    console.log(`[Generation] Template used:`, assembled.debug.templateUsed)
+    console.log(`[Generation] Pipeline complete:`)
+    console.log(`  - Final prompt (${assembled.promptMetadata.tokenEstimate} tokens): ${enhancedPrompt.substring(0, 100)}...`)
+    console.log(`  - Idea type: ${assembled.promptMetadata.ideaType}`)
+    console.log(`  - Brand lens applied: ${assembled.promptMetadata.brandLensApplied}`)
+    console.log(`  - Selected ${assembled.selectedReferences.length} reference assets`)
+    console.log(`  - Constraints applied: ${assembled.promptMetadata.constraintsApplied.join(', ')}`)
 
     // Get DALL-E parameters
     const size = getDallESize(parameters.aspectRatio)
@@ -190,7 +238,7 @@ async function processGenerationJob(job: Job<GenerationJobData>) {
       const storageKey = `studios/${studioId}/generations/${generationId}/asset-${i + 1}-${Date.now()}.png`
       const assetUrl = await uploadToS3(imageBuffer, storageKey)
 
-      // Create asset record with enhanced metadata
+      // Create asset record with new pipeline metadata
       const asset = await prisma.asset.create({
         data: {
           studioId,
@@ -205,15 +253,21 @@ async function processGenerationJob(job: Job<GenerationJobData>) {
             size: size,
             quality: parameters.quality || 'standard',
             revisedPrompt: response.data[0]?.revised_prompt || enhancedPrompt,
-            // NEW: Store prompt assembly metadata
-            promptMetadata: assembled.promptMetadata,
-            selectedReferences: assembled.selectedReferenceAssets.map(r => ({
+            // NEW: 4-stage pipeline metadata
+            pipeline: {
+              ideaType: assembled.promptMetadata.ideaType,
+              subject: assembled.promptMetadata.subject,
+              brandLensApplied: assembled.promptMetadata.brandLensApplied,
+              artStyleApplied: assembled.promptMetadata.artStyleApplied,
+              tokenEstimate: assembled.promptMetadata.tokenEstimate,
+            },
+            selectedReferences: assembled.selectedReferences.map(r => ({
               assetId: r.assetId,
               assetType: r.assetType,
               relevanceScore: r.relevanceScore,
+              reason: r.reason,
             })),
-            appliedBrandFields: assembled.appliedBrandFields,
-            appliedTemplateId: assembled.appliedTemplateId,
+            constraintsApplied: assembled.promptMetadata.constraintsApplied,
           },
         },
       })
