@@ -14,11 +14,11 @@ interface JobStatus {
 
 const stages = [
   { id: "queued", label: "Added to queue", description: "Your brand analysis is queued" },
-  { id: "preflight", label: "Connecting to site", description: "Accessing your website" },
-  { id: "rendering", label: "Capturing visual language", description: "Taking screenshots and analyzing layout" },
-  { id: "extracting", label: "Extracting brand signals", description: "Identifying colors, fonts, and logos" },
-  { id: "building", label: "Assembling brand profile", description: "Creating your brand kit" },
-  { id: "complete", label: "Draft ready for review", description: "Brand profile complete" },
+  { id: "preflight", label: "Understanding the brand", description: "Connecting to your website" },
+  { id: "rendering", label: "Mapping visual patterns", description: "Capturing screenshots and layout" },
+  { id: "extracting", label: "Capturing the color palette", description: "Extracting colors, fonts, and visual elements" },
+  { id: "building", label: "Learning the aesthetics", description: "Analyzing brand identity and style" },
+  { id: "complete", label: "Putting everything together", description: "Finalizing your brand kit" },
 ]
 
 export default function ProcessingPage() {
@@ -28,6 +28,8 @@ export default function ProcessingPage() {
 
   const [job, setJob] = useState<JobStatus | null>(null)
   const [currentStageIndex, setCurrentStageIndex] = useState(0)
+  const [profile, setProfile] = useState<any>(null)
+  const [showCompleteButton, setShowCompleteButton] = useState(false)
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout
@@ -45,12 +47,13 @@ export default function ProcessingPage() {
             setCurrentStageIndex(stageIndex)
           }
 
-          // If completed, redirect to review
+          // If completed, fetch profile and show button
           if (data.job.status === "completed") {
             clearInterval(intervalId)
+            fetchProfile()
             setTimeout(() => {
-              router.push(`/studios/${studioId}/review`)
-            }, 1000)
+              setShowCompleteButton(true)
+            }, 1500)
           }
 
           // If failed, stop polling
@@ -75,6 +78,22 @@ export default function ProcessingPage() {
       }
     }
   }, [studioId, router])
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch(`/api/studios/${studioId}/profile`)
+      if (response.ok) {
+        const data = await response.json()
+        setProfile(data.profile)
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+    }
+  }
+
+  const handleBegin = () => {
+    router.push(`/studios/${studioId}/brand-kit`)
+  }
 
   if (!job) {
     return (
@@ -132,93 +151,232 @@ export default function ProcessingPage() {
     )
   }
 
+  const getLogo = () => {
+    if (!profile?.logos?.candidates || profile.logos.candidates.length === 0) {
+      return null
+    }
+    return profile.logos.candidates[0]?.url
+  }
+
+  const logo = getLogo()
+
   return (
-    <div style={{ maxWidth: '768px', margin: '0 auto', padding: '48px' }}>
+    <div style={{ maxWidth: '896px', margin: '0 auto', padding: '48px' }}>
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
         <h1 className="text-display" style={{ marginBottom: '8px' }}>
-          Analyzing Your Brand
+          Extracting brand identity
         </h1>
         <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>
-          This usually takes 30-60 seconds. We'll redirect you when ready.
+          This is a one-time setup for your brand
         </p>
       </div>
 
-      <div className="card" style={{ padding: '32px' }}>
-        {/* Stage timeline */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {stages.map((stage, index) => {
-            const isComplete = index < currentStageIndex
-            const isCurrent = index === currentStageIndex
-            const isPending = index > currentStageIndex
+      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '32px' }}>
+        {/* Left: Progress Steps */}
+        <div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {stages.map((stage, index) => {
+              const isComplete = index < currentStageIndex || job?.status === 'completed'
+              const isCurrent = index === currentStageIndex && job?.status !== 'completed'
 
-            return (
-              <div
-                key={stage.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '16px',
-                  padding: '16px',
-                  borderRadius: 'var(--radius-lg)',
-                  transition: 'all 300ms ease',
-                  background: isCurrent
-                    ? 'rgba(91, 123, 111, 0.1)'
-                    : isComplete
-                    ? 'rgba(91, 154, 127, 0.1)'
-                    : 'transparent',
-                  border: isCurrent
-                    ? '1px solid var(--color-ivy-500)'
-                    : isComplete
-                    ? '1px solid var(--color-success-500)'
-                    : '1px solid transparent'
-                }}
-              >
-                <div style={{ flexShrink: 0, marginTop: '2px' }}>
-                  {isComplete ? (
-                    <CheckCircle2 className="w-5 h-5" style={{ color: 'var(--color-success-500)' }} />
-                  ) : isCurrent ? (
-                    <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--color-ivy-500)' }} />
-                  ) : (
-                    <div style={{ 
-                      width: '20px', 
-                      height: '20px', 
-                      borderRadius: '50%', 
-                      border: '2px solid var(--color-border-medium)' 
-                    }} />
-                  )}
+              return (
+                <div
+                  key={stage.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '12px',
+                    transition: 'all 300ms ease',
+                  }}
+                >
+                  <div style={{ flexShrink: 0 }}>
+                    {isComplete ? (
+                      <CheckCircle2 className="w-5 h-5" style={{ color: 'var(--color-ivy-500)' }} />
+                    ) : isCurrent ? (
+                      <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--color-ivy-500)' }} />
+                    ) : (
+                      <div style={{ 
+                        width: '20px', 
+                        height: '20px', 
+                        borderRadius: '50%', 
+                        border: '2px solid var(--color-border-medium)' 
+                      }} />
+                    )}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p className="text-label" style={{
+                      color: isComplete || isCurrent
+                        ? 'var(--color-text-primary)'
+                        : 'var(--color-text-tertiary)',
+                    }}>
+                      {stage.label}
+                    </p>
+                  </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <h3 className="text-label" style={{
-                    color: isCurrent
-                      ? 'var(--color-ivy-500)'
-                      : isComplete
-                      ? 'var(--color-success-500)'
-                      : 'var(--color-text-secondary)',
-                    marginBottom: '4px'
-                  }}>
-                    {stage.label}
-                  </h3>
-                  <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
-                    {stage.description}
-                  </p>
-                </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+
+          {job?.status === 'completed' && (
+            <div style={{ marginTop: '24px', textAlign: 'center' }}>
+              <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
+                About 34 seconds
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Info box */}
-        <div style={{ 
-          marginTop: '32px', 
-          padding: '16px', 
-          borderRadius: 'var(--radius-lg)',
-          background: 'rgba(91, 123, 111, 0.1)', 
-          border: '1px solid rgba(91, 123, 111, 0.2)' 
-        }}>
-          <p className="text-body" style={{ color: 'var(--color-ivy-400)' }}>
-            We're analyzing your website to extract colors, fonts, logos, and brand style. 
-            You'll review everything before generating any assets.
-          </p>
+        {/* Right: Logo and Brand Info */}
+        <div className="bg-surface-1 rounded-xl border border-border-subtle" style={{ padding: '48px' }}>
+          {/* Logo Display */}
+          {logo && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '48px',
+                background: 'var(--color-surface-2)',
+                borderRadius: 'var(--radius-lg)',
+                marginBottom: '32px',
+                border: '1px solid var(--color-border-subtle)',
+              }}
+            >
+              <img
+                src={logo}
+                alt="Brand logo"
+                style={{
+                  maxWidth: '300px',
+                  maxHeight: '120px',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
+          )}
+
+          {/* Brand Info (shown when extraction is complete) */}
+          {profile && job?.status === 'completed' && (
+            <div style={{ marginBottom: '32px' }}>
+              {profile.brandName && (
+                <h2 className="text-display" style={{ marginBottom: '16px', textAlign: 'center' }}>
+                  {profile.brandName}
+                </h2>
+              )}
+
+              {profile.description && (
+                <p className="text-body" style={{ 
+                  color: 'var(--color-text-secondary)', 
+                  textAlign: 'center',
+                  marginBottom: '16px'
+                }}>
+                  {profile.description}
+                </p>
+              )}
+
+              {profile.tagline && (
+                <div
+                  style={{
+                    padding: '16px',
+                    background: 'var(--color-sage-50)',
+                    borderRadius: 'var(--radius-md)',
+                    borderLeft: '3px solid var(--color-ivy-500)',
+                    marginBottom: '24px',
+                  }}
+                >
+                  <p className="text-label" style={{ color: 'var(--color-text-tertiary)', marginBottom: '4px' }}>
+                    Tagline
+                  </p>
+                  <p className="text-body" style={{ color: 'var(--color-text-primary)', fontStyle: 'italic' }}>
+                    "{profile.tagline}"
+                  </p>
+                </div>
+              )}
+
+              {/* Fonts Preview */}
+              {profile.fonts && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 className="text-subheading" style={{ marginBottom: '12px' }}>
+                    Fonts
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="bg-surface-2 rounded-lg border border-border-subtle" style={{ padding: '16px' }}>
+                      <p className="text-caption" style={{ color: 'var(--color-text-tertiary)', marginBottom: '8px' }}>
+                        Headings
+                      </p>
+                      <p className="text-label" style={{ fontWeight: '600' }}>
+                        Aa Bb Cc
+                      </p>
+                      <p className="text-caption" style={{ color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                        {profile.fonts.heading?.family}
+                      </p>
+                    </div>
+                    <div className="bg-surface-2 rounded-lg border border-border-subtle" style={{ padding: '16px' }}>
+                      <p className="text-caption" style={{ color: 'var(--color-text-tertiary)', marginBottom: '8px' }}>
+                        Body
+                      </p>
+                      <p className="text-label">
+                        Aa Bb Cc
+                      </p>
+                      <p className="text-caption" style={{ color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                        {profile.fonts.body?.family}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Visual Assets Preview */}
+              {profile.toneKeywords && profile.toneKeywords.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {profile.toneKeywords.slice(0, 5).map((keyword: string) => (
+                      <span
+                        key={keyword}
+                        className="text-caption"
+                        style={{
+                          padding: '6px 12px',
+                          background: 'var(--color-surface-2)',
+                          border: '1px solid var(--color-border-subtle)',
+                          borderRadius: 'var(--radius-pill)',
+                          color: 'var(--color-text-secondary)',
+                          fontSize: '12px',
+                        }}
+                      >
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Let's Begin Button */}
+          {showCompleteButton && (
+            <div style={{ textAlign: 'center' }}>
+              <button
+                onClick={handleBegin}
+                className="inline-flex items-center justify-center h-12 px-8 bg-ivy-600 text-white rounded-lg text-label font-medium hover:bg-ivy-700 transition-all duration-150 shadow-soft"
+                style={{ width: '100%' }}
+              >
+                Let's Begin
+              </button>
+            </div>
+          )}
+
+          {/* Loading state message */}
+          {!showCompleteButton && job?.status !== 'completed' && (
+            <div style={{ textAlign: 'center', padding: '32px 0' }}>
+              <Loader2 className="w-8 h-8 animate-spin" style={{ 
+                color: 'var(--color-ivy-500)',
+                margin: '0 auto 16px'
+              }} />
+              <p className="text-body" style={{ color: 'var(--color-text-secondary)' }}>
+                Analyzing your website...
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

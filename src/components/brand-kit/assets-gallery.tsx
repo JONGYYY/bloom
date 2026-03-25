@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Image as ImageIcon } from "lucide-react"
+import { Image as ImageIcon, AlertCircle } from "lucide-react"
 
 interface BrandAsset {
   id: string
@@ -24,7 +24,9 @@ interface AssetsGalleryProps {
 
 export default function AssetsGallery({ assets, onSelectAsset }: AssetsGalleryProps) {
   const [selectedType, setSelectedType] = useState<string | null>(null)
-
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set())
+  const [imageLoading, setImageLoading] = useState<Set<string>>(new Set())
+  
   // Get unique asset types
   const assetTypes = Array.from(new Set(assets.map(a => a.type)))
   
@@ -33,18 +35,33 @@ export default function AssetsGallery({ assets, onSelectAsset }: AssetsGalleryPr
     ? assets.filter(a => a.type === selectedType)
     : assets
 
-  // Get asset URL from storage key
+  // Get asset URL - now provided by API
   const getAssetUrl = (asset: BrandAsset) => {
-    // Assuming S3 URL structure
-    const bucket = process.env.NEXT_PUBLIC_AWS_S3_BUCKET || 'bloom-assets'
-    const region = process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1'
-    return `https://${bucket}.s3.${region}.amazonaws.com/${asset.storageKey}`
+    // URL is now constructed by the API endpoint
+    return (asset as any).url || ''
   }
 
   const getTypeLabel = (type: string) => {
     return type.split('_').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ')
+  }
+
+  const handleImageError = (assetId: string) => {
+    setImageErrors(prev => new Set(prev).add(assetId))
+    setImageLoading(prev => {
+      const next = new Set(prev)
+      next.delete(assetId)
+      return next
+    })
+  }
+
+  const handleImageLoad = (assetId: string) => {
+    setImageLoading(prev => {
+      const next = new Set(prev)
+      next.delete(assetId)
+      return next
+    })
   }
 
   if (assets.length === 0) {
@@ -146,25 +163,25 @@ export default function AssetsGallery({ assets, onSelectAsset }: AssetsGalleryPr
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: '16px',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+          gap: '20px',
         }}
       >
         {filteredAssets.map((asset) => (
           <div
             key={asset.id}
             onClick={() => onSelectAsset?.(asset)}
-            className="bg-surface-1 rounded-lg border border-border-subtle"
+            className="bg-surface-1 rounded-xl border border-border-subtle"
             style={{
               cursor: onSelectAsset ? 'pointer' : 'default',
               overflow: 'hidden',
-              transition: 'all 150ms ease',
+              transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
             }}
             onMouseEnter={(e) => {
               if (onSelectAsset) {
-                e.currentTarget.style.borderColor = 'var(--color-border-strong)'
-                e.currentTarget.style.transform = 'translateY(-2px)'
-                e.currentTarget.style.boxShadow = 'var(--shadow-soft)'
+                e.currentTarget.style.borderColor = 'var(--color-ivy-500)'
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)'
               }
             }}
             onMouseLeave={(e) => {
@@ -184,36 +201,85 @@ export default function AssetsGallery({ assets, onSelectAsset }: AssetsGalleryPr
                 alignItems: 'center',
                 justifyContent: 'center',
                 overflow: 'hidden',
+                position: 'relative',
               }}
             >
-              <img
-                src={getAssetUrl(asset)}
-                alt={asset.type}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                }}
-                loading="lazy"
-              />
+              {imageErrors.has(asset.id) ? (
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '16px'
+                }}>
+                  <AlertCircle size={24} style={{ color: 'var(--color-text-tertiary)' }} />
+                  <p className="text-caption" style={{ 
+                    color: 'var(--color-text-tertiary)',
+                    textAlign: 'center',
+                    fontSize: '11px'
+                  }}>
+                    Image unavailable
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {imageLoading.has(asset.id) && (
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'var(--color-surface-2)',
+                    }}>
+                      <div
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          border: '2px solid var(--color-border-medium)',
+                          borderTop: '2px solid var(--color-ivy-500)',
+                          borderRadius: '50%',
+                          animation: 'spin 0.6s linear infinite',
+                        }}
+                      />
+                    </div>
+                  )}
+                  <img
+                    src={getAssetUrl(asset)}
+                    alt={getTypeLabel(asset.type)}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      padding: '16px',
+                    }}
+                    loading="lazy"
+                    onError={() => handleImageError(asset.id)}
+                    onLoad={() => handleImageLoad(asset.id)}
+                  />
+                </>
+              )}
             </div>
 
             {/* Info */}
-            <div style={{ padding: '12px' }}>
+            <div style={{ padding: '16px' }}>
               <p className="text-label" style={{ 
                 color: 'var(--color-text-primary)',
-                marginBottom: '4px',
-                textTransform: 'capitalize'
+                marginBottom: '8px',
+                fontWeight: '500',
               }}>
                 {getTypeLabel(asset.type)}
               </p>
               
               {asset.metadata && (
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
                   {asset.metadata.width && asset.metadata.height && (
                     <span className="text-caption" style={{ 
                       color: 'var(--color-text-tertiary)',
-                      fontSize: '11px'
+                      fontSize: '11px',
+                      padding: '2px 6px',
+                      background: 'var(--color-surface-2)',
+                      borderRadius: 'var(--radius-sm)',
                     }}>
                       {asset.metadata.width}×{asset.metadata.height}
                     </span>
@@ -222,11 +288,34 @@ export default function AssetsGallery({ assets, onSelectAsset }: AssetsGalleryPr
                     <span className="text-caption" style={{ 
                       color: 'var(--color-text-tertiary)',
                       fontSize: '11px',
-                      textTransform: 'uppercase'
+                      textTransform: 'uppercase',
+                      padding: '2px 6px',
+                      background: 'var(--color-surface-2)',
+                      borderRadius: 'var(--radius-sm)',
                     }}>
                       {asset.metadata.format}
                     </span>
                   )}
+                </div>
+              )}
+
+              {/* Priority indicator if available */}
+              {asset.metadata?.priority && (
+                <div style={{ marginBottom: '8px' }}>
+                  <span className="text-caption" style={{ 
+                    color: asset.metadata.priority === 'high' 
+                      ? 'var(--color-ivy-500)' 
+                      : 'var(--color-text-tertiary)',
+                    fontSize: '11px',
+                    padding: '2px 6px',
+                    background: asset.metadata.priority === 'high'
+                      ? 'rgba(74, 101, 89, 0.1)'
+                      : 'var(--color-surface-2)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontWeight: '500',
+                  }}>
+                    {asset.metadata.priority} priority
+                  </span>
                 </div>
               )}
 
@@ -238,15 +327,15 @@ export default function AssetsGallery({ assets, onSelectAsset }: AssetsGalleryPr
                   marginTop: '8px',
                   flexWrap: 'wrap'
                 }}>
-                  {asset.metadata.colors.slice(0, 5).map((color, idx) => (
+                  {asset.metadata.colors.slice(0, 6).map((color, idx) => (
                     <div
                       key={idx}
                       style={{
-                        width: '16px',
-                        height: '16px',
-                        borderRadius: '3px',
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: 'var(--radius-sm)',
                         backgroundColor: color,
-                        border: '1px solid var(--color-border-subtle)',
+                        border: '1px solid var(--color-border-medium)',
                       }}
                       title={color}
                     />

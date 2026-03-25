@@ -50,7 +50,16 @@ export async function GET(
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ assets })
+    // Construct full S3 URLs for each asset
+    const bucket = process.env.AWS_S3_BUCKET || 'bloom-assets'
+    const region = process.env.AWS_REGION || 'us-east-1'
+    
+    const assetsWithUrls = assets.map(asset => ({
+      ...asset,
+      url: `https://${bucket}.s3.${region}.amazonaws.com/${asset.storageKey}`
+    }))
+
+    return NextResponse.json({ assets: assetsWithUrls })
   } catch (error) {
     console.error('Error fetching brand assets:', error)
     return NextResponse.json(

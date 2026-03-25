@@ -54,24 +54,32 @@ async function processExtractionJob(job: Job<ExtractionJobData>) {
     const prompt = `Analyze this brand website screenshot and extract the following brand elements:
 
 1. Color Palette - IMPORTANT INSTRUCTIONS:
-   Below is a list of colors extracted from the page's CSS, sorted by frequency.
-   Your task is to:
-   - Select the most DISTINCTIVE and BRAND-DEFINING colors from this list
-   - DEDUPLICATE similar colors: Group colors that are within 10-15% similarity (e.g., #FF90E8 and #FF88E5 are too similar, pick one)
-   - Exclude pure black (#000000, #000), pure white (#FFFFFF, #FFF), and neutral grays (#F5F5F5, #CCCCCC, #E5E5E5, etc.) UNLESS they are clearly a key brand color
-   - Focus on colors that appear frequently AND are visually distinctive
-   - Aim for 4-8 TOTAL unique colors across all categories
+   Below is a list of colors extracted from the page's CSS, sorted by frequency (most used first).
    
-   Extracted colors from page (sorted by frequency):
+   Your task is to:
+   - Use FREQUENCY as the PRIMARY selection factor
+   - Only include colors that appear frequently (have high count values)
+   - EXCLUDE colors with very low frequency (count < 10)
+   - Group VERY SIMILAR colors together (within 5-10% similarity) and pick the most frequent one
+     * Example: #FF90E8 and #FF88E5 are too similar, pick the one with higher count
+     * BUT: White (#FFFFFF) and Gray (#CCCCCC) are NOT similar - keep both if frequent
+     * AND: Light gray (#F5F5F5) and Dark gray (#333333) are NOT similar - keep both if frequent
+   - DO NOT filter out neutrals/grays/black/white - if they're frequent, include them
+   - Aim for 4-10 TOTAL colors across all categories based on frequency
+   
+   Extracted colors from page (sorted by frequency, highest first):
 ${colorList}
    
-   Categorize the selected colors as:
-   - PRIMARY (2-4 colors): The most dominant, frequently used brand colors that define brand identity
-   - SECONDARY (1-3 colors): Supporting colors used for sections, backgrounds, or secondary elements  
-   - ACCENT (1-2 colors): High-contrast colors used for CTAs, highlights, or important actions
+   Selection strategy:
+   1. Start with the most frequent colors (top 15-20)
+   2. Group very similar colors (pick most frequent from each group)
+   3. Categorize by usage pattern and frequency:
+      - PRIMARY (2-5 colors): Most frequent colors that define the brand
+      - SECONDARY (1-3 colors): Moderately frequent supporting colors
+      - ACCENT (1-2 colors): Less frequent but distinctive highlight colors
    
-   Return EXACT hex codes from the list above (e.g., "#FF90E8").
-   Provide confidence level (high/medium/low) based on frequency and visual prominence in the screenshot.
+   Return EXACT hex codes from the list above.
+   Provide confidence level (high/medium/low) based on frequency count.
 
 2. Typography:
    - Identify the heading font family and weight (from the largest, most prominent headings)
@@ -97,7 +105,12 @@ ${metaAssetList}
 4. Brand Identity:
    - Extract the brand name (from title, logo, or prominent text)
    - Extract the tagline if visible (usually near logo or in hero section)
-   - Generate a brief brand description (1-2 sentences about what the brand does)
+   - Generate a specific, concise brand description (1-2 sentences, ~30-40 words)
+     * Focus on WHAT the brand does and WHO it serves
+     * Be specific about the product/service category
+     * Mention key features or unique value if clear
+     * Example format: "[Brand] is a [specific category] that [what it does]. It [key feature/benefit]."
+     * Keep it factual and informative, not marketing-speak
 
 5. Tone Keywords:
    - Select 5-7 tone keywords that describe the brand's personality
