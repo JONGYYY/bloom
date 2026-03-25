@@ -6,6 +6,7 @@ import { S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
+import { compressBrandProfile, assemblePrompt, isAssetMetadata } from '@/lib/prompt'
 
 interface GenerationJobData {
   generationId: string
@@ -64,70 +65,16 @@ async function uploadToS3(buffer: Buffer, key: string): Promise<string> {
   return signedUrl
 }
 
-function buildEnhancedPrompt(
+// Legacy function - now replaced by new prompt pipeline
+// Kept for reference but no longer used
+function buildEnhancedPrompt_DEPRECATED(
   userPrompt: string,
   studioProfile: any,
   parameters: GenerationJobData['parameters']
 ): string {
+  console.warn('[Generation] Using deprecated buildEnhancedPrompt - should use new pipeline')
   let enhancedPrompt = userPrompt
-
-  // Add aesthetic/style modifiers
-  if (parameters.aesthetic) {
-    enhancedPrompt += `, ${parameters.aesthetic} aesthetic`
-  }
-
-  if (parameters.mood) {
-    enhancedPrompt += `, ${parameters.mood} mood`
-  }
-
-  if (parameters.composition) {
-    enhancedPrompt += `, ${parameters.composition} composition`
-  }
-
-  if (parameters.artMovement && parameters.artMovement.length > 0) {
-    enhancedPrompt += `, inspired by ${parameters.artMovement.join(', ')}`
-  }
-
-  // Add brand context based on brand strength
-  const brandStrength = parameters.brandStrength || 'balanced'
-  
-  if (studioProfile && brandStrength !== 'loose') {
-    const colors = studioProfile.colors
-    const fonts = studioProfile.fonts
-    
-    if (brandStrength === 'strict' || brandStrength === 'strong') {
-      // Strong brand adherence
-      if (colors?.primary && colors.primary.length > 0) {
-        enhancedPrompt += `, using brand colors: ${colors.primary.slice(0, 3).join(', ')}`
-      }
-      if (fonts?.heading?.family) {
-        enhancedPrompt += `, ${fonts.heading.family} typography style`
-      }
-      if (studioProfile.styleTraits && studioProfile.styleTraits.length > 0) {
-        enhancedPrompt += `, ${studioProfile.styleTraits.slice(0, 2).join(' and ')} style`
-      }
-    } else if (brandStrength === 'balanced') {
-      // Balanced brand influence
-      if (studioProfile.styleTraits && studioProfile.styleTraits.length > 0) {
-        enhancedPrompt += `, ${studioProfile.styleTraits[0]} style`
-      }
-    }
-  }
-
-  // Add text presence guidance
-  if (parameters.textPresence) {
-    const textGuidance = {
-      none: 'no text, purely visual',
-      minimal: 'minimal text overlay',
-      headline: 'prominent headline text',
-      'text-heavy': 'text-focused design with multiple text elements'
-    }
-    enhancedPrompt += `, ${textGuidance[parameters.textPresence as keyof typeof textGuidance] || ''}`
-  }
-
-  // Add quality/style suffix
   enhancedPrompt += ', high quality, professional design'
-
   return enhancedPrompt
 }
 
@@ -155,19 +102,62 @@ async function processGenerationJob(job: Job<GenerationJobData>) {
       data: { status: 'processing' },
     })
 
-    // Fetch studio profile
-    const studio = await prisma.studio.findUnique({
+    // Fetch studio with profile and tagged brand assets
+    const studioWithProfile = await prisma.studio.findUnique({
       where: { id: studioId },
-      include: { profile: true },
+      include: { 
+        profile: true,
+        brandAssets: {
+          where: {
+            metadata: {
+              not: null as any
+            }
+          }
+        }
+      },
     })
 
-    if (!studio) {
+    if (!studioWithProfile) {
       throw new Error('Studio not found')
     }
 
-    // Build enhanced prompt
-    const enhancedPrompt = buildEnhancedPrompt(prompt, studio.profile, parameters)
-    console.log(`[Generation] Enhanced prompt: ${enhancedPrompt}`)
+    // NEW PIPELINE: Layer 1 - Compress brand profile
+    const brandProfile = studioWithProfile.profile 
+      ? compressBrandProfile(studioWithProfile as any)
+      : null
+
+    if (brandProfile) {
+      console.log(`[Generation] Brand profile compressed:`, {
+        brandName: brandProfile.brandName,
+        palette: brandProfile.paletteSummary,
+        tone: brandProfile.toneSummary,
+      })
+    }
+
+    // NEW PIPELINE: Layer 4 - Assemble prompt with reference selection
+    const ideaTemplateId = parameters.outputType || 'social-media-ad'
+    
+    const assembled = await assemblePrompt({
+      userPrompt: prompt,
+      ideaTemplateId,
+      brandProfile,
+      brandAssets: studioWithProfile.brandAssets.filter((a: any) => a.metadata && isAssetMetadata(a.metadata)),
+      parameters: {
+        artStyle: parameters.aesthetic,
+        mood: parameters.mood,
+        composition: parameters.composition,
+        textPresence: parameters.textPresence,
+        brandStrength: parameters.brandStrength,
+        userReferences: parameters.referenceImages,
+      }
+    })
+
+    const enhancedPrompt = assembled.finalPrompt
+
+    console.log(`[Generation] Assembled prompt (${assembled.promptMetadata.tokenCount} tokens):`, enhancedPrompt)
+    console.log(`[Generation] Selected ${assembled.selectedReferenceAssets.length} reference assets`)
+    console.log(`[Generation] Applied brand fields:`, assembled.appliedBrandFields)
+    console.log(`[Generation] Template used:`, assembled.debug.templateUsed)
 
     // Get DALL-E parameters
     const size = getDallESize(parameters.aspectRatio)
@@ -200,7 +190,7 @@ async function processGenerationJob(job: Job<GenerationJobData>) {
       const storageKey = `studios/${studioId}/generations/${generationId}/asset-${i + 1}-${Date.now()}.png`
       const assetUrl = await uploadToS3(imageBuffer, storageKey)
 
-      // Create asset record
+      // Create asset record with enhanced metadata
       const asset = await prisma.asset.create({
         data: {
           studioId,
@@ -215,6 +205,15 @@ async function processGenerationJob(job: Job<GenerationJobData>) {
             size: size,
             quality: parameters.quality || 'standard',
             revisedPrompt: response.data[0]?.revised_prompt || enhancedPrompt,
+            // NEW: Store prompt assembly metadata
+            promptMetadata: assembled.promptMetadata,
+            selectedReferences: assembled.selectedReferenceAssets.map(r => ({
+              assetId: r.assetId,
+              assetType: r.assetType,
+              relevanceScore: r.relevanceScore,
+            })),
+            appliedBrandFields: assembled.appliedBrandFields,
+            appliedTemplateId: assembled.appliedTemplateId,
           },
         },
       })
