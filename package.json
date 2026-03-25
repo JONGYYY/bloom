@@ -5,10 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "prisma migrate deploy && next start",
     "lint": "eslint",
-    "postinstall": "prisma generate && prisma migrate deploy",
-    "workers": "tsx src/workers/index.ts",
+    "postinstall": "prisma generate",
+    "workers": "prisma migrate deploy && tsx src/workers/index.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
