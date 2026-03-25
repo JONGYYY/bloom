@@ -51,18 +51,23 @@ model Studio {
 }
 
 model StudioProfile {
-  id          String   @id @default(cuid())
-  studioId    String   @unique
-  version     Int      @default(1)
-  colors      Json
-  fonts       Json
-  logos       Json
-  styleTraits String[]
-  provenance  Json
-  isConfirmed Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  studio      Studio   @relation(fields: [studioId], references: [id])
+  id              String   @id @default(cuid())
+  studioId        String   @unique
+  version         Int      @default(1)
+  colors          Json
+  fonts           Json
+  logos           Json
+  styleTraits     String[]
+  provenance      Json
+  brandName       String?
+  tagline         String?
+  description     String?
+  aestheticDesc   String?
+  toneKeywords    String[]  @default([])
+  isConfirmed     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  studio          Studio    @relation(fields: [studioId], references: [id])
 }
 
 model BrandAsset {

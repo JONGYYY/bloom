@@ -94,18 +94,41 @@ ${imageList}
 Meta assets (favicons, og:image, etc.):
 ${metaAssetList}
 
-4. Style Traits:
-   - Select 2-4 applicable traits from: minimal, premium, playful, bold, editorial, soft, sporty, luxe
-   - Base this on: layout density, color vibrancy, typography style, spacing, visual complexity
+4. Brand Identity:
+   - Extract the brand name (from title, logo, or prominent text)
+   - Extract the tagline if visible (usually near logo or in hero section)
+   - Generate a brief brand description (1-2 sentences about what the brand does)
+
+5. Tone Keywords:
+   - Select 5-7 tone keywords that describe the brand's personality
+   - Choose from: Playful, Optimistic, Modern, Energetic, Approachable, Professional, Bold, 
+     Friendly, Clean, Vibrant, Minimal, Premium, Editorial, Soft, Luxe, Innovative, 
+     Trustworthy, Creative, Sophisticated, Casual, Warm, Technical, Artistic
+   - Base this on: visual style, color choices, typography, imagery, copy tone
+
+6. Aesthetic Description:
+   - Write a rich, detailed aesthetic description (2-4 sentences)
+   - Describe the overall visual language, design approach, and brand personality
+   - Include: contrast level, color palette feel, typography style, visual elements, mood
+   - Example format: "The [Brand] brand aesthetic is characterized by [key visual trait]. 
+     It pairs [typography description] with [color description], set against [background description]. 
+     [Visual elements description] imbue the brand with [personality traits], creating 
+     [overall impression]."
+
+7. Color Provenance:
+   - For each selected color, note where it was primarily found
+   - Sources: "text", "backgrounds", "illustrations", "buttons", "accents", "header", "footer"
+   - Track frequency: "high", "medium", "low"
 
 Additional context from DOM:
 - Title: ${domData.title}
+- URL: ${domData.url || url}
 - Header styles: ${JSON.stringify(domData.headerStyles)}
 - Body styles: ${JSON.stringify(domData.bodyStyles)}
 - Heading styles: ${JSON.stringify(domData.headingStyles)}
 - Button styles: ${JSON.stringify(domData.buttonStyles)}
 
-4. Brand Assets to Download:
+8. Brand Assets to Download:
    - Identify ALL assets that should be downloaded and stored
    - Categorize each asset by type: logo, icon, illustration, hero_image, product_photo
    - For each asset, provide:
@@ -116,6 +139,11 @@ Additional context from DOM:
 
 Return a JSON object with this EXACT structure:
 {
+  "brandIdentity": {
+    "name": "Brand Name",
+    "tagline": "Brand tagline or null",
+    "description": "Brief 1-2 sentence description"
+  },
   "colors": {
     "primary": ["#HEX1", "#HEX2"],
     "secondary": ["#HEX3"],
@@ -139,6 +167,12 @@ Return a JSON object with this EXACT structure:
       { "type": "image" | "svg", "url": "exact-url" | null, "svgIndex": number | null, "confidence": "high" | "medium" | "low" }
     ],
     "selected": null
+  },
+  "toneKeywords": ["Playful", "Optimistic", "Modern", "Energetic", "Approachable"],
+  "aestheticDescription": "Rich 2-4 sentence description of the brand's visual aesthetic...",
+  "colorProvenance": {
+    "#HEX1": { "source": "illustrations", "frequency": "high" },
+    "#HEX2": { "source": "buttons", "frequency": "medium" }
   },
   "assetsToDownload": [
     {
@@ -259,7 +293,7 @@ Return a JSON object with this EXACT structure:
       },
     })
 
-    // Create studio profile
+    // Create studio profile with enhanced brand identity
     await prisma.studioProfile.create({
       data: {
         studioId,
@@ -267,7 +301,15 @@ Return a JSON object with this EXACT structure:
         fonts: extractedData.fonts || {},
         logos: extractedData.logos || { candidates: [], selected: null },
         styleTraits: extractedData.styleTraits || [],
-        provenance: extractedData.provenance || {},
+        provenance: {
+          ...extractedData.provenance || {},
+          colorProvenance: extractedData.colorProvenance || {}
+        },
+        brandName: extractedData.brandIdentity?.name || null,
+        tagline: extractedData.brandIdentity?.tagline || null,
+        description: extractedData.brandIdentity?.description || null,
+        aestheticDesc: extractedData.aestheticDescription || null,
+        toneKeywords: extractedData.toneKeywords || [],
         isConfirmed: false,
       },
     })

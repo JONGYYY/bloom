@@ -1,63 +1,60 @@
-import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
-import { prisma } from "@/lib/db"
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ studioId: string }> }
 ) {
   try {
+    const { studioId } = await params
+    
+    // Verify authentication
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    const { studioId } = await params
-    const { searchParams } = new URL(request.url)
-    
-    const tab = searchParams.get('tab') || 'recent'
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
-
-    let whereClause: any = { studioId }
-
-    if (tab === 'favorites') {
-      whereClause.isFavorite = true
-    } else if (tab === 'references') {
-      whereClause.isReference = true
-    }
-
-    const assets = await prisma.asset.findMany({
-      where: whereClause,
-      include: {
-        generation: {
-          select: {
-            id: true,
-            prompt: true,
-            parameters: true,
-            createdAt: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: limit,
-      skip: offset,
+    // Get user from database
+    const dbUser = await prisma.user.findUnique({
+      where: { authId: user.id },
     })
 
-    const total = await prisma.asset.count({ where: whereClause })
+    if (!dbUser) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
 
-    return NextResponse.json({ assets, total })
+    // Verify studio ownership
+    const studio = await prisma.studio.findUnique({
+      where: { id: studioId },
+    })
+
+    if (!studio || studio.workspaceId !== dbUser.workspaceId) {
+      return NextResponse.json(
+        { error: 'Studio not found or access denied' },
+        { status: 404 }
+      )
+    }
+
+    // Fetch brand assets
+    const assets = await prisma.brandAsset.findMany({
+      where: { studioId },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return NextResponse.json({ assets })
   } catch (error) {
-    console.error("Error fetching assets:", error)
+    console.error('Error fetching brand assets:', error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: 'Failed to fetch brand assets' },
       { status: 500 }
     )
   }

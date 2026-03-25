@@ -2,19 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import LogoSection from "@/components/brand-kit/logo-section"
-import ColorSection from "@/components/brand-kit/color-section"
-import TypographySection from "@/components/brand-kit/typography-section"
+import IdentitySection from "@/components/brand-kit/identity-section"
+import DesignLanguageSection from "@/components/brand-kit/design-language-section"
+import AssetsGallery from "@/components/brand-kit/assets-gallery"
+import TemplatesSection from "@/components/brand-kit/templates-section"
 import TraitsSection from "@/components/brand-kit/traits-section"
 import CapturesSection from "@/components/brand-kit/captures-section"
 import ReferencesSection from "@/components/brand-kit/references-section"
 import { Loader2 } from "lucide-react"
-
-interface Logo {
-  id: string
-  url: string
-  type: "primary" | "secondary" | "icon"
-}
 
 interface ColorGroup {
   role: "primary" | "secondary" | "accent"
@@ -24,6 +19,14 @@ interface ColorGroup {
 interface Font {
   family: string
   weight: string
+}
+
+interface BrandAsset {
+  id: string
+  type: string
+  storageKey: string
+  sourceUrl?: string
+  metadata?: any
 }
 
 interface Capture {
@@ -44,7 +47,10 @@ export default function BrandKitPage() {
 
   const [isLoading, setIsLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
-  const [logos, setLogos] = useState<Logo[]>([])
+  const [logo, setLogo] = useState<string | undefined>(undefined)
+  const [brandName, setBrandName] = useState<string | undefined>(undefined)
+  const [tagline, setTagline] = useState<string | undefined>(undefined)
+  const [description, setDescription] = useState<string | undefined>(undefined)
   const [colorGroups, setColorGroups] = useState<ColorGroup[]>([
     { role: "primary", colors: [] },
     { role: "secondary", colors: [] },
@@ -52,12 +58,16 @@ export default function BrandKitPage() {
   ])
   const [headingFont, setHeadingFont] = useState<Font>({ family: "Inter", weight: "600" })
   const [bodyFont, setBodyFont] = useState<Font>({ family: "Inter", weight: "400" })
+  const [toneKeywords, setToneKeywords] = useState<string[]>([])
+  const [aestheticDesc, setAestheticDesc] = useState<string | undefined>(undefined)
   const [traits, setTraits] = useState<string[]>([])
+  const [brandAssets, setBrandAssets] = useState<BrandAsset[]>([])
   const [captures, setCaptures] = useState<Capture[]>([])
   const [references, setReferences] = useState<Reference[]>([])
 
   useEffect(() => {
     fetchProfile()
+    fetchBrandAssets()
   }, [studioId])
 
   const fetchProfile = async () => {
@@ -69,10 +79,22 @@ export default function BrandKitPage() {
         setProfile(data.profile)
         
         if (data.profile) {
-          if (data.profile.logos?.primary) {
-            setLogos([{ id: '1', url: data.profile.logos.primary.url, type: 'primary' }])
+          // Brand identity
+          setBrandName(data.profile.brandName || undefined)
+          setTagline(data.profile.tagline || undefined)
+          setDescription(data.profile.description || undefined)
+          setAestheticDesc(data.profile.aestheticDesc || undefined)
+          setToneKeywords(data.profile.toneKeywords || [])
+          
+          // Logo
+          if (data.profile.logos?.candidates && data.profile.logos.candidates.length > 0) {
+            const primaryLogo = data.profile.logos.candidates[0]
+            if (primaryLogo.url) {
+              setLogo(primaryLogo.url)
+            }
           }
           
+          // Colors
           if (data.profile.colors) {
             setColorGroups([
               { role: "primary", colors: data.profile.colors.primary || [] },
@@ -81,6 +103,7 @@ export default function BrandKitPage() {
             ])
           }
           
+          // Fonts
           if (data.profile.fonts) {
             setHeadingFont({
               family: data.profile.fonts.heading?.family || "Inter",
@@ -92,6 +115,7 @@ export default function BrandKitPage() {
             })
           }
           
+          // Traits
           if (data.profile.styleTraits) {
             setTraits(data.profile.styleTraits)
           }
@@ -104,27 +128,51 @@ export default function BrandKitPage() {
     }
   }
 
+  const fetchBrandAssets = async () => {
+    try {
+      const response = await fetch(`/api/studios/${studioId}/assets`)
+      if (response.ok) {
+        const data = await response.json()
+        setBrandAssets(data.assets || [])
+      }
+    } catch (error) {
+      console.error('Error fetching brand assets:', error)
+    }
+  }
+
   const calculateCompleteness = () => {
     let total = 0
     let completed = 0
 
-    if (logos.length > 0) completed += 20
-    total += 20
+    // Brand identity (30%)
+    if (brandName) completed += 10
+    total += 10
+    if (logo) completed += 10
+    total += 10
+    if (description || tagline) completed += 10
+    total += 10
 
-    if (colorGroups.some(g => g.colors.length > 0)) completed += 20
-    total += 20
+    // Colors (15%)
+    if (colorGroups.some(g => g.colors.length > 0)) completed += 15
+    total += 15
 
+    // Typography (15%)
     if (headingFont.family && bodyFont.family) completed += 15
     total += 15
 
-    if (traits.length > 0) completed += 15
+    // Tone & Aesthetic (15%)
+    if (toneKeywords.length > 0 || aestheticDesc) completed += 15
     total += 15
 
-    if (captures.length > 0) completed += 15
+    // Visual Assets (15%)
+    if (brandAssets.length > 0) completed += 15
     total += 15
 
-    if (references.length > 0) completed += 15
-    total += 15
+    // Other (10%)
+    if (traits.length > 0) completed += 5
+    total += 5
+    if (captures.length > 0 || references.length > 0) completed += 5
+    total += 5
 
     return Math.round((completed / total) * 100)
   }
@@ -181,14 +229,19 @@ export default function BrandKitPage() {
       </div>
 
       {/* Sections */}
-      <LogoSection
-        logos={logos}
-        onAddLogo={() => console.log('Add logo')}
-        onRemoveLogo={(id) => setLogos(logos.filter(l => l.id !== id))}
+      <IdentitySection
+        logo={logo}
+        brandName={brandName}
+        tagline={tagline}
+        description={description}
       />
 
-      <ColorSection
+      <DesignLanguageSection
         colorGroups={colorGroups}
+        headingFont={headingFont}
+        bodyFont={bodyFont}
+        toneKeywords={toneKeywords}
+        aestheticDescription={aestheticDesc}
         onAddColor={(role) => console.log('Add color', role)}
         onRemoveColor={(role, color) => {
           setColorGroups(colorGroups.map(g => 
@@ -199,11 +252,12 @@ export default function BrandKitPage() {
         }}
       />
 
-      <TypographySection
-        headingFont={headingFont}
-        bodyFont={bodyFont}
-        onEdit={() => console.log('Edit typography')}
+      <AssetsGallery
+        assets={brandAssets}
+        onSelectAsset={(asset) => console.log('Selected asset', asset)}
       />
+
+      <TemplatesSection studioId={studioId} />
 
       <TraitsSection
         traits={traits}
