@@ -94,10 +94,26 @@ export default function ProcessingPage() {
       
       if (assetsResponse.ok) {
         const assetsData = await assetsResponse.json()
+        console.log('[Processing] Fetched assets:', assetsData.assets?.length || 0)
+        console.log('[Processing] Asset types:', assetsData.assets?.map((a: any) => a.type))
+        
         // Find the first logo asset
         const logoAsset = assetsData.assets?.find((a: any) => a.type === 'logo')
+        console.log('[Processing] Logo asset found:', logoAsset ? 'YES' : 'NO')
+        
         if (logoAsset) {
+          console.log('[Processing] Logo URL:', logoAsset.url)
           setLogoUrl(logoAsset.url)
+        } else {
+          console.log('[Processing] No logo asset found, checking for other options...')
+          // Fallback: try to find any asset that could be a logo
+          const fallbackLogo = assetsData.assets?.find((a: any) => 
+            a.type.includes('logo') || a.type === 'favicon'
+          )
+          if (fallbackLogo) {
+            console.log('[Processing] Using fallback logo:', fallbackLogo.type)
+            setLogoUrl(fallbackLogo.url)
+          }
         }
       }
     } catch (error) {

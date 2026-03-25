@@ -101,13 +101,14 @@ export async function downloadAndUploadAsset(
     const timestamp = Date.now()
     const storageKey = `studios/${studioId}/brand-assets/${asset.type}-${timestamp}-${hash.substring(0, 8)}.${format}`
 
-    // Upload to S3
+    // Upload to S3 with public-read ACL
     await s3Client.send(
       new PutObjectCommand({
         Bucket: process.env.AWS_S3_BUCKET!,
         Key: storageKey,
         Body: processedBuffer,
         ContentType: `image/${format}`,
+        ACL: 'public-read', // Make images publicly accessible
       })
     )
 
@@ -167,6 +168,7 @@ async function uploadSvgToS3(
         Key: storageKey,
         Body: buffer,
         ContentType: 'image/svg+xml',
+        ACL: 'public-read', // Make SVGs publicly accessible
       })
     )
 
@@ -228,7 +230,10 @@ export async function downloadAssetsBatch(
           seenHashes.add(result.hash)
           successCount++
         } else {
-          console.log(`[Batch Downloader] Skipped duplicate asset (hash: ${result.hash.substring(0, 8)})`)
+          console.log(`[Batch Downloader] ⚠️  Skipped DUPLICATE asset:`)
+          console.log(`[Batch Downloader]    Type: ${result.type}`)
+          console.log(`[Batch Downloader]    Hash: ${result.hash.substring(0, 8)}`)
+          console.log(`[Batch Downloader]    URL: ${result.originalUrl.substring(0, 80)}`)
         }
       } else {
         failCount++

@@ -181,11 +181,19 @@ Additional context from DOM:
      }
    }
    
-   QUALITY CHECKS:
-   - If you found fewer than 10 assets, you're being too conservative - look again
-   - Every SVG in the list should be considered (SVGs are valuable brand assets)
-   - Small icons (16x16 to 64x64) are important - include them all
-   - Illustrations of any size should be included
+   MANDATORY REQUIREMENTS:
+   - You MUST extract AT LEAST 15 assets (preferably 20-30)
+   - If you found fewer than 15 assets, you FAILED - go back and look again
+   - EVERY SVG in the list should be included (SVGs are valuable brand assets)
+   - EVERY icon should be included (small icons 16x16 to 64x64 are important)
+   - EVERY illustration should be included
+   - Include ALL favicons and meta images
+   - When in doubt between including or excluding, ALWAYS INCLUDE
+   
+   CONSISTENCY REQUIREMENT:
+   - Your extraction should be CONSISTENT - same website should yield same asset count
+   - Don't randomly exclude assets between runs
+   - Use deterministic logic: if an image exists in the list and looks brand-relevant, include it
 
 Return a JSON object with this EXACT structure:
 {
@@ -333,7 +341,10 @@ Return a JSON object with this EXACT structure:
       downloadedAssets = await downloadAssetsBatch(assetsToDownload, studioId, 3)
       console.log(`[Extraction] Successfully downloaded ${downloadedAssets.length} assets`)
       if (downloadedAssets.length < assetsToDownload.length) {
-        console.log(`[Extraction] WARNING: Only ${downloadedAssets.length}/${assetsToDownload.length} assets downloaded successfully`)
+        console.log(`[Extraction] ⚠️  WARNING: Only ${downloadedAssets.length}/${assetsToDownload.length} assets downloaded successfully`)
+      }
+      if (downloadedAssets.length < 10) {
+        console.log(`[Extraction] ⚠️  CRITICAL: Only ${downloadedAssets.length} assets downloaded - expected 15-30 minimum`)
       }
     } else {
       console.log(`[Extraction] WARNING: No assets to download from AI response`)
@@ -351,7 +362,7 @@ Return a JSON object with this EXACT structure:
     // Select colors deterministically using frequency-based algorithm
     console.log(`[Extraction] Selecting colors deterministically from ${domData.extractedColors?.length || 0} extracted colors`)
     const colorSelection = selectBrandColors(domData.extractedColors || [], {
-      minFrequency: 10,
+      minFrequency: 6, // Only include colors used 6+ times
       maxColors: 10,
       similarityThreshold: 8,
     })
@@ -462,7 +473,7 @@ export const extractionWorker = new Worker<ExtractionJobData>(
   processExtractionJob,
   {
     connection,
-    concurrency: 3,
+    concurrency: 10, // Increased for production scale - AI API calls are lightweight
   }
 )
 

@@ -54,7 +54,7 @@ async function capturePage(page: Page, url: string, viewport: { width: number; h
 }
 
 async function uploadToS3(buffer: Buffer | Uint8Array, key: string): Promise<string> {
-  const bucketName = process.env.S3_BUCKET_NAME || 'brand-assets'
+  const bucketName = process.env.AWS_S3_BUCKET || 'bloom-assets'
   
   const upload = new Upload({
     client: s3Client,
@@ -63,6 +63,7 @@ async function uploadToS3(buffer: Buffer | Uint8Array, key: string): Promise<str
       Key: key,
       Body: buffer,
       ContentType: 'image/png',
+      ACL: 'public-read', // Make screenshots publicly accessible
     },
   })
 
@@ -385,7 +386,7 @@ export const browserRenderWorker = new Worker<BrowserRenderJobData>(
   processBrowserRenderJob,
   {
     connection,
-    concurrency: 2, // Limit concurrency for browser operations
+    concurrency: 5, // Increased for production scale - handles 5 simultaneous browser renders
   }
 )
 

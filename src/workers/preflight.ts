@@ -90,7 +90,7 @@ export const preflightWorker = new Worker<PreflightJobData>(
   processPreflightJob,
   {
     connection,
-    concurrency: 5,
+    concurrency: 10, // Increased for production scale - simple URL checks are fast
   }
 )
 

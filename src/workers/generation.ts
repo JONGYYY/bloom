@@ -41,7 +41,7 @@ const s3Client = new S3Client({
 })
 
 async function uploadToS3(buffer: Buffer, key: string): Promise<string> {
-  const bucketName = process.env.S3_BUCKET_NAME || 'brand-assets'
+  const bucketName = process.env.AWS_S3_BUCKET || 'bloom-assets'
   
   const upload = new Upload({
     client: s3Client,
@@ -50,6 +50,7 @@ async function uploadToS3(buffer: Buffer, key: string): Promise<string> {
       Key: key,
       Body: buffer,
       ContentType: 'image/png',
+      ACL: 'public-read', // Make generated images publicly accessible
     },
   })
 
@@ -310,7 +311,7 @@ export const generationWorker = new Worker<GenerationJobData>(
   processGenerationJob,
   {
     connection,
-    concurrency: 2, // Limit concurrent DALL-E calls
+    concurrency: 5, // Increased for production scale - handles 5 simultaneous DALL-E generations
   }
 )
 
