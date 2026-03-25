@@ -39,7 +39,8 @@ export interface AssetToDownload {
  */
 export async function downloadAndUploadAsset(
   asset: AssetToDownload,
-  studioId: string
+  studioId: string,
+  retries: number = 2
 ): Promise<DownloadedAsset | null> {
   try {
     // Handle SVG content differently
@@ -47,15 +48,32 @@ export async function downloadAndUploadAsset(
       return await uploadSvgToS3(asset.metadata.svgContent, studioId, asset)
     }
 
-    // Download the image
+    console.log(`[Downloader] Downloading ${asset.type}: ${asset.source.substring(0, 100)}...`)
+
+    // Download the image with timeout
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+
     const response = await fetch(asset.source, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; BloomBot/1.0)',
+        'Accept': 'image/*,*/*',
       },
+      signal: controller.signal,
     })
 
+    clearTimeout(timeout)
+
     if (!response.ok) {
-      console.error(`Failed to download asset: ${asset.source} - ${response.status}`)
+      console.error(`[Downloader] Failed to download (${response.status}): ${asset.source}`)
+      
+      // Retry on 5xx errors
+      if (response.status >= 500 && retries > 0) {
+        console.log(`[Downloader] Retrying... (${retries} attempts left)`)
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        return downloadAndUploadAsset(asset, studioId, retries - 1)
+      }
+      
       return null
     }
 
@@ -95,6 +113,8 @@ export async function downloadAndUploadAsset(
 
     const url = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${storageKey}`
 
+    console.log(`[Downloader] ✓ Successfully uploaded ${asset.type} to S3: ${storageKey}`)
+
     return {
       storageKey,
       url,
@@ -105,8 +125,20 @@ export async function downloadAndUploadAsset(
       size: processedBuffer.length,
       hash,
     }
-  } catch (error) {
-    console.error(`Error downloading asset ${asset.source}:`, error)
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.error(`[Downloader] Timeout downloading: ${asset.source}`)
+    } else {
+      console.error(`[Downloader] Error downloading ${asset.source}:`, error.message || error)
+    }
+    
+    // Retry on network errors
+    if (retries > 0 && (error.name === 'AbortError' || error.code === 'ECONNRESET')) {
+      console.log(`[Downloader] Retrying... (${retries} attempts left)`)
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      return downloadAndUploadAsset(asset, studioId, retries - 1)
+    }
+    
     return null
   }
 }
@@ -120,6 +152,7 @@ async function uploadSvgToS3(
   asset: AssetToDownload
 ): Promise<DownloadedAsset | null> {
   try {
+    console.log(`[Downloader] Processing inline SVG (${asset.type})...`)
     const buffer = Buffer.from(svgContent, 'utf-8')
     const hash = createHash('md5').update(buffer).digest('hex')
     const timestamp = Date.now()
@@ -142,6 +175,8 @@ async function uploadSvgToS3(
     const width = widthMatch ? parseInt(widthMatch[1]) : asset.metadata?.width || 0
     const height = heightMatch ? parseInt(heightMatch[1]) : asset.metadata?.height || 0
 
+    console.log(`[Downloader] ✓ Successfully uploaded SVG to S3: ${storageKey}`)
+
     return {
       storageKey,
       url,
@@ -152,8 +187,8 @@ async function uploadSvgToS3(
       size: buffer.length,
       hash,
     }
-  } catch (error) {
-    console.error('Error uploading SVG:', error)
+  } catch (error: any) {
+    console.error(`[Downloader] Error uploading SVG:`, error.message || error)
     return null
   }
 }
@@ -168,19 +203,32 @@ export async function downloadAssetsBatch(
 ): Promise<DownloadedAsset[]> {
   const results: DownloadedAsset[] = []
   const seenHashes = new Set<string>()
+  let successCount = 0
+  let failCount = 0
+
+  console.log(`[Batch Downloader] Starting batch download of ${assets.length} assets with concurrency ${concurrency}`)
 
   // Process in batches to avoid overwhelming the server
   for (let i = 0; i < assets.length; i += concurrency) {
     const batch = assets.slice(i, i + concurrency)
+    console.log(`[Batch Downloader] Processing batch ${Math.floor(i / concurrency) + 1}/${Math.ceil(assets.length / concurrency)} (${batch.length} assets)`)
+    
     const batchResults = await Promise.all(
       batch.map(asset => downloadAndUploadAsset(asset, studioId))
     )
 
     // Filter out nulls and duplicates
     for (const result of batchResults) {
-      if (result && !seenHashes.has(result.hash)) {
-        results.push(result)
-        seenHashes.add(result.hash)
+      if (result) {
+        if (!seenHashes.has(result.hash)) {
+          results.push(result)
+          seenHashes.add(result.hash)
+          successCount++
+        } else {
+          console.log(`[Batch Downloader] Skipped duplicate asset (hash: ${result.hash.substring(0, 8)})`)
+        }
+      } else {
+        failCount++
       }
     }
 
@@ -189,6 +237,8 @@ export async function downloadAssetsBatch(
       await new Promise(resolve => setTimeout(resolve, 500))
     }
   }
+
+  console.log(`[Batch Downloader] Completed: ${successCount} successful, ${failCount} failed, ${results.length} unique assets`)
 
   return results
 }
