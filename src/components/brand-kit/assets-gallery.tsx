@@ -12,7 +12,12 @@ interface BrandAsset {
     width?: number
     height?: number
     format?: string
+    size?: number
+    hash?: string
+    priority?: string
+    reason?: string
     location?: string
+    extractedFrom?: string
     colors?: string[]
   }
 }
