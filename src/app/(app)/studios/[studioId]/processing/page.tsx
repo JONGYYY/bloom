@@ -29,6 +29,7 @@ export default function ProcessingPage() {
   const [job, setJob] = useState<JobStatus | null>(null)
   const [currentStageIndex, setCurrentStageIndex] = useState(0)
   const [profile, setProfile] = useState<any>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [showCompleteButton, setShowCompleteButton] = useState(false)
 
   useEffect(() => {
@@ -81,10 +82,23 @@ export default function ProcessingPage() {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch(`/api/studios/${studioId}/profile`)
-      if (response.ok) {
-        const data = await response.json()
+      const [profileResponse, assetsResponse] = await Promise.all([
+        fetch(`/api/studios/${studioId}/profile`),
+        fetch(`/api/studios/${studioId}/assets`)
+      ])
+      
+      if (profileResponse.ok) {
+        const data = await profileResponse.json()
         setProfile(data.profile)
+      }
+      
+      if (assetsResponse.ok) {
+        const assetsData = await assetsResponse.json()
+        // Find the first logo asset
+        const logoAsset = assetsData.assets?.find((a: any) => a.type === 'logo')
+        if (logoAsset) {
+          setLogoUrl(logoAsset.url)
+        }
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
@@ -151,14 +165,7 @@ export default function ProcessingPage() {
     )
   }
 
-  const getLogo = () => {
-    if (!profile?.logos?.candidates || profile.logos.candidates.length === 0) {
-      return null
-    }
-    return profile.logos.candidates[0]?.url
-  }
-
-  const logo = getLogo()
+  // Logo comes from BrandAsset table now, not profile.logos
 
   return (
     <div style={{ maxWidth: '896px', margin: '0 auto', padding: '48px' }}>
@@ -230,7 +237,7 @@ export default function ProcessingPage() {
         {/* Right: Logo and Brand Info */}
         <div className="bg-surface-1 rounded-xl border border-border-subtle" style={{ padding: '48px' }}>
           {/* Logo Display */}
-          {logo && (
+          {logoUrl && (
             <div
               style={{
                 display: 'flex',
@@ -244,7 +251,7 @@ export default function ProcessingPage() {
               }}
             >
               <img
-                src={logo}
+                src={logoUrl}
                 alt="Brand logo"
                 style={{
                   maxWidth: '300px',

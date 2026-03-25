@@ -38,13 +38,16 @@ async function processExtractionJob(job: Job<ExtractionJobData>) {
     
     const imageList = allImages.map((img: any, idx: number) => {
       if (img.type === 'svg') {
-        return `${idx + 1}. [SVG] ${img.width}x${img.height} in ${img.location} (class: "${img.className}")`
+        return `[SVG-${idx}] Inline SVG | Size: ${img.width}x${img.height} | Location: ${img.location} | Context: ${img.parentContext} | Class: "${img.className || 'none'}" | ID: "${img.id || 'none'}"`
       }
-      return `${idx + 1}. ${img.src} (alt: "${img.alt}", ${img.width}x${img.height}, location: ${img.location}, context: ${img.parentContext})`
+      if (img.type === 'background') {
+        return `[IMG-${idx}] ${img.src} | Type: CSS Background | Size: ${img.width}x${img.height} | Location: ${img.location} | Context: ${img.parentContext}`
+      }
+      return `[IMG-${idx}] ${img.src} | Alt: "${img.alt || 'none'}" | Size: ${img.width}x${img.height} | Location: ${img.location} | Context: ${img.parentContext} | Class: "${img.className || 'none'}"`
     }).join('\n') || 'No images found'
     
     const metaAssetList = metaAssets.map((asset: any, idx: number) => 
-      `${idx + 1}. [${asset.type}] ${asset.src}`
+      `[META-${idx}] ${asset.src} | Type: ${asset.type}`
     ).join('\n') || 'No meta assets found'
 
     const colorList = domData.extractedColors?.map((c: any, idx: number) => 
@@ -141,14 +144,80 @@ Additional context from DOM:
 - Heading styles: ${JSON.stringify(domData.headingStyles)}
 - Button styles: ${JSON.stringify(domData.buttonStyles)}
 
-8. Brand Assets to Download:
-   - Identify ALL assets that should be downloaded and stored
-   - Categorize each asset by type: logo, icon, illustration, hero_image, product_photo
-   - For each asset, provide:
-     - Source (URL or SVG index)
-     - Asset type classification
-     - Priority (high/medium/low)
-     - Reason for inclusion
+8. Brand Assets to Download - CRITICAL EXTRACTION REQUIREMENTS:
+   
+   YOUR PRIMARY GOAL: Extract EVERY visual asset that represents the brand's visual identity.
+   
+   MANDATORY EXTRACTION CATEGORIES:
+   
+   A. LOGOS (Priority: HIGH)
+      - Main logo in header/navigation
+      - Footer logo (if different)
+      - Favicon
+      - Any logo variations (light/dark, icon-only, full wordmark)
+      - Target: Extract ALL logo instances found
+   
+   B. ICONS (Priority: MEDIUM-HIGH)
+      - Navigation icons
+      - Feature/benefit icons
+      - Social media icons
+      - UI icons (checkmarks, arrows, etc.)
+      - Service/product icons
+      - Target: Extract AT LEAST 10-15 icons if present
+   
+   C. ILLUSTRATIONS (Priority: MEDIUM-HIGH)
+      - Spot illustrations (small decorative graphics)
+      - Character illustrations
+      - Decorative elements
+      - Abstract graphics
+      - Pattern elements
+      - Target: Extract ALL illustrations found
+   
+   D. HERO/BANNER IMAGES (Priority: MEDIUM)
+      - Main hero/banner images
+      - Section background images
+      - Featured visuals
+      - Target: Extract 2-5 key hero images
+   
+   E. PRODUCT PHOTOS (Priority: HIGH if applicable)
+      - Product shots
+      - Packaging images
+      - Screenshots of product
+      - Target: Extract ALL product visuals
+   
+   F. GRAPHIC ELEMENTS (Priority: LOW-MEDIUM)
+      - Badges
+      - Stamps
+      - Decorative shapes
+      - Brand patterns
+   
+   EXTRACTION STRATEGY:
+   1. Review EVERY entry in the "Images found on page" list above
+   2. Review ALL "Meta assets" (favicons, og:image)
+   3. For SVG assets marked as [SVG-N], use source format: "svg-N" (e.g., "svg-0", "svg-1", "svg-2")
+   4. For image URLs marked as [IMG-N] or [META-N], use the EXACT URL shown
+   5. Target: 15-40 total assets (extract everything that's brand-relevant)
+   6. Include ALL icons, ALL illustrations, ALL logos
+   7. When in doubt about relevance, INCLUDE IT
+   
+   RESPONSE FORMAT for each asset:
+   {
+     "source": "exact-url-from-list" OR "svg-0" OR "svg-1" etc.,
+     "type": "logo" | "icon" | "illustration" | "hero_image" | "product_photo" | "graphic_element",
+     "priority": "high" | "medium" | "low",
+     "reason": "Brief explanation",
+     "metadata": {
+       "location": "header" | "hero" | "content" | "footer",
+       "width": number,
+       "height": number
+     }
+   }
+   
+   QUALITY CHECKS:
+   - If you found fewer than 10 assets, you're being too conservative - look again
+   - Every SVG in the list should be considered (SVGs are valuable brand assets)
+   - Small icons (16x16 to 64x64) are important - include them all
+   - Illustrations of any size should be included
 
 Return a JSON object with this EXACT structure:
 {
@@ -250,22 +319,24 @@ Return a JSON object with this EXACT structure:
 
     // Download and store brand assets
     console.log(`[Extraction] Downloading brand assets...`)
+    console.log(`[Extraction] Available images: ${allImages.length} (${allImages.filter((i: any) => i.type === 'svg').length} SVGs)`)
+    console.log(`[Extraction] Available meta assets: ${metaAssets.length}`)
     const assetsToDownload: AssetToDownload[] = []
     
     // Process assets from OpenAI response
     if (extractedData.assetsToDownload && Array.isArray(extractedData.assetsToDownload)) {
+      console.log(`[Extraction] AI identified ${extractedData.assetsToDownload.length} assets to download`)
       for (const asset of extractedData.assetsToDownload) {
         // Handle SVG assets
         if (asset.source.startsWith('svg-')) {
           const svgIndex = parseInt(asset.source.replace('svg-', ''))
-          const svgImage = allImages.find((img: any, idx: number) => 
-            img.type === 'svg' && idx === svgIndex
-          )
+          // Find SVG by exact index in allImages array
+          const svgImage = allImages[svgIndex]
           
-          if (svgImage && svgImage.content) {
+          if (svgImage && svgImage.type === 'svg' && svgImage.content) {
             assetsToDownload.push({
               source: asset.source,
-              type: 'svg',
+              type: asset.type || 'svg', // Use the AI's classification (logo, icon, etc.) or default to 'svg'
               priority: asset.priority || 'medium',
               reason: asset.reason,
               metadata: {
@@ -275,16 +346,20 @@ Return a JSON object with this EXACT structure:
                 location: svgImage.location,
               },
             })
+            console.log(`[Extraction] Added SVG asset: ${asset.source} (${asset.type})`)
+          } else {
+            console.log(`[Extraction] WARNING: SVG not found at index ${svgIndex}`)
           }
         } else {
           // Handle regular image URLs
           assetsToDownload.push({
             source: asset.source,
-            type: asset.type || 'illustration',
+            type: asset.type || 'illustration', // Can be: logo, icon, illustration, hero_image, product_photo, graphic_element
             priority: asset.priority || 'medium',
             reason: asset.reason,
             metadata: asset.metadata,
           })
+          console.log(`[Extraction] Added image asset: ${asset.source.substring(0, 80)}... (${asset.type})`)
         }
       }
     }
@@ -293,8 +368,18 @@ Return a JSON object with this EXACT structure:
     let downloadedAssets: DownloadedAsset[] = []
     if (assetsToDownload.length > 0) {
       console.log(`[Extraction] Downloading ${assetsToDownload.length} assets...`)
+      console.log(`[Extraction] Assets to download:`, assetsToDownload.map(a => ({ 
+        source: a.source, 
+        type: a.type,
+        priority: a.priority 
+      })))
       downloadedAssets = await downloadAssetsBatch(assetsToDownload, studioId, 3)
       console.log(`[Extraction] Successfully downloaded ${downloadedAssets.length} assets`)
+      if (downloadedAssets.length < assetsToDownload.length) {
+        console.log(`[Extraction] WARNING: Only ${downloadedAssets.length}/${assetsToDownload.length} assets downloaded successfully`)
+      }
+    } else {
+      console.log(`[Extraction] WARNING: No assets to download from AI response`)
     }
 
     // Update progress

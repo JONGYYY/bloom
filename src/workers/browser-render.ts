@@ -109,13 +109,6 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
       height: 1080,
     })
 
-    // Capture mobile screenshot
-    console.log(`[Browser Render] Capturing mobile screenshot for ${url}`)
-    const mobileScreenshot = await capturePage(page, url, {
-      width: 390,
-      height: 844,
-    })
-
     // Define __name helper in page context to avoid esbuild/tsx transpilation issues
     // Using string literal to avoid tsx transpiling this code
     await page.evaluate('window.__name = function(fn, name) { return fn; }')
@@ -333,34 +326,20 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
 
     await page.close()
 
-    // Upload screenshots to S3
-    console.log(`[Browser Render] Uploading screenshots to S3`)
+    // Upload screenshot to S3
+    console.log(`[Browser Render] Uploading screenshot to S3`)
     const desktopKey = `studios/${studioId}/screenshots/desktop-${Date.now()}.png`
-    const mobileKey = `studios/${studioId}/screenshots/mobile-${Date.now()}.png`
+    const desktopUrl = await uploadToS3(desktopScreenshot, desktopKey)
 
-    const [desktopUrl, mobileUrl] = await Promise.all([
-      uploadToS3(desktopScreenshot, desktopKey),
-      uploadToS3(mobileScreenshot, mobileKey),
-    ])
-
-    // Save assets to database
-    await prisma.brandAsset.createMany({
-      data: [
-        {
-          studioId,
-          type: 'screenshot_desktop',
-          storageKey: desktopKey,
-          sourceUrl: url,
-          metadata: { width: 1920, height: 1080 },
-        },
-        {
-          studioId,
-          type: 'screenshot_mobile',
-          storageKey: mobileKey,
-          sourceUrl: url,
-          metadata: { width: 390, height: 844 },
-        },
-      ],
+    // Save screenshot to database
+    await prisma.brandAsset.create({
+      data: {
+        studioId,
+        type: 'screenshot_desktop',
+        storageKey: desktopKey,
+        sourceUrl: url,
+        metadata: { width: 1920, height: 1080 },
+      },
     })
 
     // Update job stage
@@ -378,7 +357,6 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
       url,
       jobId,
       desktopScreenshotUrl: desktopUrl,
-      mobileScreenshotUrl: mobileUrl,
       domData,
     })
 
