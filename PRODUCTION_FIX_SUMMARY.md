@@ -49,32 +49,41 @@ ADD COLUMN "toneKeywords" TEXT[] DEFAULT ARRAY[]::TEXT[];
 
 **Commit:** `90ba62e`
 
-### 2. Fixed Postinstall Script ✅
+### 2. Fixed Migration Deployment ✅
 
-**Before:**
-```json
-"postinstall": "prisma generate"
-```
-
-**After:**
+**Initial attempt (failed):**
 ```json
 "postinstall": "prisma generate && prisma migrate deploy"
 ```
+❌ Failed because database isn't available during build phase
 
-This ensures migrations are automatically applied during deployment.
+**Final fix (working):**
+```json
+"postinstall": "prisma generate",
+"start": "prisma migrate deploy && next start",
+"workers": "prisma migrate deploy && tsx src/workers/index.ts"
+```
+✅ Migrations run at runtime when database is available
 
-**Commit:** `857746c`
+**Commits:** `857746c` (initial), `55bee51` (fix)
 
 ## What Happens Next
 
 When Railway redeploys (which should happen automatically after the push):
 
-1. **Install dependencies** - `npm install`
-2. **Run postinstall** - `prisma generate && prisma migrate deploy`
+**Build Phase (no database access):**
+1. **Install dependencies** - `npm ci`
+2. **Run postinstall** - `prisma generate`
    - Generate Prisma client with new types
-   - Apply pending migration (add new columns)
 3. **Build application** - `npm run build`
+
+**Runtime Phase (database available):**
 4. **Start application** - `npm start`
+   - First: `prisma migrate deploy` (apply pending migrations)
+   - Then: `next start` (start the app)
+5. **Start workers** - `npm run workers`
+   - First: `prisma migrate deploy` (apply pending migrations)
+   - Then: `tsx src/workers/index.ts` (start workers)
 
 The migration will add the missing columns to the `StudioProfile` table, and the extraction worker will work correctly.
 
