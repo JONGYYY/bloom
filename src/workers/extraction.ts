@@ -387,9 +387,52 @@ Return a JSON object with this EXACT structure:
       },
     })
 
+    // Merge CSS-extracted colors with image-extracted colors
+    const cssColors = domData.extractedColors || []
+    const imageColorMap = new Map<string, number>()
+    
+    // Collect all colors from downloaded assets
+    for (const asset of downloadedAssets) {
+      if (asset.dominantColors && asset.dominantColors.length > 0) {
+        console.log(`[Extraction] Asset ${asset.storageKey} contributed colors: ${asset.dominantColors.join(', ')}`)
+        
+        // Add each color with a weight based on asset type
+        // Logos and icons get higher weight since they're more likely to contain brand colors
+        const weight = (asset.storageKey.includes('logo') || asset.storageKey.includes('icon')) ? 15 : 10
+        
+        for (const color of asset.dominantColors) {
+          const existing = imageColorMap.get(color) || 0
+          imageColorMap.set(color, existing + weight)
+        }
+      }
+    }
+    
+    // Merge CSS and image colors
+    const mergedColorMap = new Map<string, number>()
+    
+    // Add CSS colors
+    for (const [color, freq] of cssColors) {
+      mergedColorMap.set(color, freq)
+    }
+    
+    // Add/merge image colors
+    for (const [color, weight] of imageColorMap.entries()) {
+      const existing = mergedColorMap.get(color) || 0
+      mergedColorMap.set(color, existing + weight)
+    }
+    
+    const mergedColors = Array.from(mergedColorMap.entries()).map(([color, count]) => ({
+      color,
+      count,
+    }))
+    
+    console.log(`[Extraction] Merged ${cssColors.length} CSS colors with ${imageColorMap.size} unique image colors`)
+    console.log(`[Extraction] Total unique colors: ${mergedColors.length}`)
+    console.log(`[Extraction] Image colors contributed: ${Array.from(imageColorMap.entries()).map(([c, w]) => `${c}(${w})`).join(', ')}`)
+
     // Select colors deterministically using frequency-based algorithm
-    console.log(`[Extraction] Selecting colors deterministically from ${domData.extractedColors?.length || 0} extracted colors`)
-    const colorSelection = selectBrandColors(domData.extractedColors || [], {
+    console.log(`[Extraction] Selecting colors deterministically from ${mergedColors.length} extracted colors`)
+    const colorSelection = selectBrandColors(mergedColors, {
       minFrequency: 6, // Only include colors used 6+ times
       maxColors: 10,
       similarityThreshold: 8,

@@ -1,6 +1,7 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { createHash } from 'crypto'
 import sharp from 'sharp'
+import { Vibrant } from 'node-vibrant/node'
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',
@@ -19,6 +20,7 @@ export interface DownloadedAsset {
   format: string
   size: number
   hash: string
+  dominantColors?: string[] // Hex colors extracted from image pixels
 }
 
 export interface AssetToDownload {
@@ -156,6 +158,28 @@ export async function downloadAndUploadAsset(
 
     const url = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${storageKey}`
 
+    // Extract dominant colors from the image pixels (not just CSS)
+    let dominantColors: string[] = []
+    try {
+      if (format !== 'svg') { // Skip SVG as Vibrant doesn't handle them well
+        const palette = await Vibrant.from(processedBuffer).getPalette()
+        dominantColors = [
+          palette.Vibrant?.hex,
+          palette.LightVibrant?.hex,
+          palette.DarkVibrant?.hex,
+          palette.Muted?.hex,
+          palette.LightMuted?.hex,
+          palette.DarkMuted?.hex,
+        ].filter((c): c is string => c !== undefined && c !== null)
+        
+        if (dominantColors.length > 0) {
+          console.log(`[Downloader] Extracted ${dominantColors.length} colors from image: ${dominantColors.join(', ')}`)
+        }
+      }
+    } catch (error) {
+      console.log(`[Downloader] Could not extract colors from image (non-critical): ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+
     console.log(`[Downloader] ✓ Successfully uploaded ${asset.type} to S3`)
     console.log(`[Downloader]   Storage Key: ${storageKey}`)
     console.log(`[Downloader]   Public URL: ${url}`)
@@ -170,6 +194,7 @@ export async function downloadAndUploadAsset(
       format,
       size: processedBuffer.length,
       hash,
+      dominantColors: dominantColors.length > 0 ? dominantColors : undefined,
     }
   } catch (error: any) {
     if (error.name === 'AbortError') {
@@ -233,6 +258,33 @@ async function uploadSvgToS3(
     const width = widthMatch ? parseInt(widthMatch[1]) : asset.metadata?.width || 0
     const height = heightMatch ? parseInt(heightMatch[1]) : asset.metadata?.height || 0
 
+    // Extract colors from SVG content (fill and stroke attributes)
+    const dominantColors: string[] = []
+    const fillMatches = svgContent.match(/fill="(#[0-9a-fA-F]{6})"/g)
+    const strokeMatches = svgContent.match(/stroke="(#[0-9a-fA-F]{6})"/g)
+    
+    if (fillMatches) {
+      fillMatches.forEach(match => {
+        const color = match.match(/#[0-9a-fA-F]{6}/)
+        if (color && !dominantColors.includes(color[0].toUpperCase())) {
+          dominantColors.push(color[0].toUpperCase())
+        }
+      })
+    }
+    
+    if (strokeMatches) {
+      strokeMatches.forEach(match => {
+        const color = match.match(/#[0-9a-fA-F]{6}/)
+        if (color && !dominantColors.includes(color[0].toUpperCase())) {
+          dominantColors.push(color[0].toUpperCase())
+        }
+      })
+    }
+    
+    if (dominantColors.length > 0) {
+      console.log(`[Downloader] Extracted ${dominantColors.length} colors from SVG: ${dominantColors.join(', ')}`)
+    }
+
     console.log(`[Downloader] ✓ Successfully uploaded SVG to S3: ${storageKey}`)
 
     return {
@@ -244,6 +296,7 @@ async function uploadSvgToS3(
       format: 'svg',
       size: buffer.length,
       hash,
+      dominantColors: dominantColors.length > 0 ? dominantColors : undefined,
     }
   } catch (error: any) {
     console.error(`[Downloader] Error uploading SVG:`, error.message || error)
