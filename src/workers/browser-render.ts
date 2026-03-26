@@ -238,13 +238,46 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
               colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
             }
           }
+          
+          // Extract SVG fill and stroke colors
+          if (el.tagName === 'svg' || el.closest('svg')) {
+            const fill = styles.fill
+            if (fill && fill !== 'none' && fill !== 'transparent') {
+              const hex = rgbToHex(fill)
+              if (hex && hex.startsWith('#')) {
+                colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
+              }
+            }
+            
+            const stroke = styles.stroke
+            if (stroke && stroke !== 'none' && stroke !== 'transparent') {
+              const hex = rgbToHex(stroke)
+              if (hex && hex.startsWith('#')) {
+                colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
+              }
+            }
+          }
+          
+          // Extract colors from box-shadow (often contains brand accent colors)
+          const boxShadow = styles.boxShadow
+          if (boxShadow && boxShadow !== 'none') {
+            const colorMatches = boxShadow.match(/rgba?\([^)]+\)/g)
+            if (colorMatches) {
+              colorMatches.forEach(color => {
+                const hex = rgbToHex(color)
+                if (hex && hex.startsWith('#')) {
+                  colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
+                }
+              })
+            }
+          }
         })
         
         // Convert to array and sort by frequency
         return Array.from(colorMap.entries())
           .sort((a, b) => b[1] - a[1])
           .map(([color, count]) => ({ color, count }))
-          .slice(0, 30) // Top 30 most frequent colors
+          .slice(0, 50) // Increased from 30 to 50 to capture more colors
       }
 
       // Extract ALL images with full context

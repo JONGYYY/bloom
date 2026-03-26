@@ -291,6 +291,13 @@ export default function ProcessingPage() {
                   maxHeight: '120px',
                   objectFit: 'contain',
                 }}
+                onError={(e) => {
+                  console.error('[Processing] Logo failed to load:', logoUrl)
+                  e.currentTarget.style.display = 'none'
+                }}
+                onLoad={() => {
+                  console.log('[Processing] Logo loaded successfully:', logoUrl)
+                }}
               />
             </div>
           )}

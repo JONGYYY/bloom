@@ -112,9 +112,13 @@ Additional context from DOM:
 - Heading styles: ${JSON.stringify(domData.headingStyles)}
 - Button styles: ${JSON.stringify(domData.buttonStyles)}
 
-8. Brand Assets to Download - CRITICAL EXTRACTION REQUIREMENTS:
+8. Brand Assets to Download:
    
-   YOUR PRIMARY GOAL: Extract EVERY visual asset that represents the brand's visual identity.
+   CRITICAL INSTRUCTION: You have ${allImages.length} images available in the list below.
+   You MUST review EVERY SINGLE ONE and extract AT LEAST 20 assets.
+   
+   DO NOT just look at the screenshot - READ THE ENTIRE IMAGE LIST BELOW.
+   The screenshot shows a limited view, but the image list contains ALL assets on the page.
    
    MANDATORY EXTRACTION CATEGORIES:
    
@@ -181,33 +185,36 @@ Additional context from DOM:
      }
    }
    
-   ⚠️  CRITICAL MANDATORY REQUIREMENTS - FAILURE TO COMPLY MEANS TASK FAILURE:
+   ⚠️  EXTRACTION REQUIREMENTS - READ CAREFULLY:
    
-   MINIMUM ASSET COUNT: You MUST extract AT LEAST 20 assets (target: 25-35)
-   - If you extract fewer than 20 assets, you have FAILED this task
-   - Extracting 10-15 assets is UNACCEPTABLE and indicates you didn't look thoroughly
-   - The page has 146+ images available - there is NO EXCUSE for extracting only 10
+   STEP 1: COUNT THE ASSETS IN THE IMAGE LIST ABOVE
+   - You have ${allImages.length} images + ${metaAssets.length} meta assets = ${allImages.length + metaAssets.length} total
    
-   WHAT TO INCLUDE (BE AGGRESSIVE):
-   - EVERY SINGLE SVG in the list (all 17 SVGs should be extracted)
-   - EVERY icon you can find (navigation, features, social, UI elements)
-   - EVERY illustration (decorative graphics, spot illustrations, characters)
-   - ALL logos and logo variations
-   - ALL favicons and meta images (og:image, twitter:image, apple-touch-icon)
-   - Hero images and key visuals
-   - Product images if present
-   - Brand graphics and decorative elements
+   STEP 2: EXTRACT AT LEAST 20 ASSETS (MINIMUM)
+   - Go through the image list line by line
+   - Extract EVERY SVG (marked as [SVG-N])
+   - Extract EVERY icon (small images, typically < 100x100)
+   - Extract EVERY illustration (decorative graphics)
+   - Extract ALL logos and favicons
+   - Extract key hero images
    
-   WHEN IN DOUBT: INCLUDE IT
-   - If an image might be brand-relevant → INCLUDE IT
-   - If an SVG exists → INCLUDE IT
-   - If an icon is present → INCLUDE IT
-   - Better to include too many than too few
+   STEP 3: VERIFY YOUR EXTRACTION
+   - Count your assetsToDownload array
+   - If count < 20, you FAILED - go back and extract more
+   - Target: 20-35 assets
    
-   CONSISTENCY REQUIREMENT:
-   - Same website should yield same asset count (±2 assets)
-   - Don't randomly exclude assets between runs
-   - Use deterministic logic: if it exists in the list and looks remotely brand-relevant, include it
+   WHAT TO EXTRACT (BE SYSTEMATIC):
+   1. ALL 17 SVGs in the list (every [SVG-N] entry)
+   2. ALL images with "icon" or "logo" in the URL
+   3. ALL images in header/nav area
+   4. ALL illustrations (decorative graphics)
+   5. ALL meta assets (favicons, og:image)
+   6. Key hero/banner images
+   
+   EXTRACTION RULE: When in doubt, INCLUDE IT
+   - Better to extract 35 assets than miss important ones
+   - Don't filter by "importance" - extract everything brand-related
+   - The user wants comprehensive brand kits, not minimal ones
 
 Return a JSON object with this EXACT structure:
 {
