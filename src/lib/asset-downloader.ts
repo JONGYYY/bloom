@@ -225,9 +225,9 @@ async function uploadSvgToS3(
   try {
     console.log(`[Downloader] Processing inline SVG (${asset.type})...`)
     
-    // Validate SVG content
-    if (!svgContent || svgContent.length < 50) {
-      console.error(`[Downloader] SVG content too short (${svgContent.length} chars)`)
+    // Validate SVG content - must be substantial
+    if (!svgContent || svgContent.length < 200) {
+      console.error(`[Downloader] SVG content too short (${svgContent.length} chars) - likely empty wrapper`)
       return null
     }
 
@@ -235,6 +235,27 @@ async function uploadSvgToS3(
       console.error(`[Downloader] Invalid SVG content - missing <svg tag`)
       return null
     }
+    
+    // Check for actual SVG content (paths, shapes, etc.) - not just an empty wrapper
+    const hasContent = 
+      svgContent.includes('<path') ||
+      svgContent.includes('<circle') ||
+      svgContent.includes('<rect') ||
+      svgContent.includes('<polygon') ||
+      svgContent.includes('<polyline') ||
+      svgContent.includes('<line') ||
+      svgContent.includes('<ellipse') ||
+      svgContent.includes('<text') ||
+      svgContent.includes('<image') ||
+      svgContent.includes('<use') ||
+      svgContent.includes('<g') // Group elements often contain content
+    
+    if (!hasContent) {
+      console.error(`[Downloader] SVG has no drawable content - rejecting empty wrapper`)
+      return null
+    }
+    
+    console.log(`[Downloader] SVG validation passed (${svgContent.length} chars, has drawable content)`)
     
     const buffer = Buffer.from(svgContent, 'utf-8')
     const hash = createHash('md5').update(buffer).digest('hex')
