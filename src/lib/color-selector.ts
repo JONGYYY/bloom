@@ -117,22 +117,17 @@ function categorizeColors(groups: ColorGroup[]): {
   const neutralGroups = groups.filter(g => isNeutral(g.representative))
   const colorGroups = groups.filter(g => !isNeutral(g.representative))
 
-  // PRIMARY: Top 2-3 most frequent non-neutral colors
-  for (let i = 0; i < Math.min(3, colorGroups.length); i++) {
+  // PRIMARY: Top 3-5 most frequent non-neutral colors (brand colors take priority)
+  for (let i = 0; i < Math.min(5, colorGroups.length); i++) {
     primary.push(colorGroups[i].representative)
   }
 
-  // SECONDARY: Next 1-2 non-neutral colors + top neutral if very frequent
-  for (let i = 3; i < Math.min(5, colorGroups.length); i++) {
-    secondary.push(colorGroups[i].representative)
+  // SECONDARY: Top 1-2 neutrals (black, white, gray) if they're frequent
+  for (let i = 0; i < Math.min(2, neutralGroups.length); i++) {
+    secondary.push(neutralGroups[i].representative)
   }
 
-  // Add most frequent neutral to secondary if it's very prominent
-  if (neutralGroups.length > 0 && neutralGroups[0].totalCount > groups[0].totalCount * 0.3) {
-    secondary.push(neutralGroups[0].representative)
-  }
-
-  // ACCENT: Remaining distinctive colors (less frequent but still significant)
+  // ACCENT: Next 1-2 non-neutral colors (less frequent brand colors)
   for (let i = 5; i < Math.min(7, colorGroups.length); i++) {
     accent.push(colorGroups[i].representative)
   }
