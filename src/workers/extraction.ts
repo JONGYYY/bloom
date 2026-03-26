@@ -410,9 +410,9 @@ Return a JSON object with this EXACT structure:
     // Merge CSS and image colors
     const mergedColorMap = new Map<string, number>()
     
-    // Add CSS colors
-    for (const [color, freq] of cssColors) {
-      mergedColorMap.set(color, freq)
+    // Add CSS colors (already in {color, count} format)
+    for (const colorFreq of cssColors) {
+      mergedColorMap.set(colorFreq.color, colorFreq.count)
     }
     
     // Add/merge image colors
