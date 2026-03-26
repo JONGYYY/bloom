@@ -50,7 +50,6 @@ async function uploadToS3(buffer: Buffer, key: string): Promise<string> {
       Key: key,
       Body: buffer,
       ContentType: 'image/png',
-      ACL: 'public-read', // Make generated images publicly accessible
     },
   })
 

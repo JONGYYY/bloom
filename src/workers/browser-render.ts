@@ -63,7 +63,6 @@ async function uploadToS3(buffer: Buffer | Uint8Array, key: string): Promise<str
       Key: key,
       Body: buffer,
       ContentType: 'image/png',
-      ACL: 'public-read', // Make screenshots publicly accessible
     },
   })
 
