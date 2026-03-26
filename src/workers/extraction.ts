@@ -181,19 +181,33 @@ Additional context from DOM:
      }
    }
    
-   MANDATORY REQUIREMENTS:
-   - You MUST extract AT LEAST 15 assets (preferably 20-30)
-   - If you found fewer than 15 assets, you FAILED - go back and look again
-   - EVERY SVG in the list should be included (SVGs are valuable brand assets)
-   - EVERY icon should be included (small icons 16x16 to 64x64 are important)
-   - EVERY illustration should be included
-   - Include ALL favicons and meta images
-   - When in doubt between including or excluding, ALWAYS INCLUDE
+   ⚠️  CRITICAL MANDATORY REQUIREMENTS - FAILURE TO COMPLY MEANS TASK FAILURE:
+   
+   MINIMUM ASSET COUNT: You MUST extract AT LEAST 20 assets (target: 25-35)
+   - If you extract fewer than 20 assets, you have FAILED this task
+   - Extracting 10-15 assets is UNACCEPTABLE and indicates you didn't look thoroughly
+   - The page has 146+ images available - there is NO EXCUSE for extracting only 10
+   
+   WHAT TO INCLUDE (BE AGGRESSIVE):
+   - EVERY SINGLE SVG in the list (all 17 SVGs should be extracted)
+   - EVERY icon you can find (navigation, features, social, UI elements)
+   - EVERY illustration (decorative graphics, spot illustrations, characters)
+   - ALL logos and logo variations
+   - ALL favicons and meta images (og:image, twitter:image, apple-touch-icon)
+   - Hero images and key visuals
+   - Product images if present
+   - Brand graphics and decorative elements
+   
+   WHEN IN DOUBT: INCLUDE IT
+   - If an image might be brand-relevant → INCLUDE IT
+   - If an SVG exists → INCLUDE IT
+   - If an icon is present → INCLUDE IT
+   - Better to include too many than too few
    
    CONSISTENCY REQUIREMENT:
-   - Your extraction should be CONSISTENT - same website should yield same asset count
+   - Same website should yield same asset count (±2 assets)
    - Don't randomly exclude assets between runs
-   - Use deterministic logic: if an image exists in the list and looks brand-relevant, include it
+   - Use deterministic logic: if it exists in the list and looks remotely brand-relevant, include it
 
 Return a JSON object with this EXACT structure:
 {

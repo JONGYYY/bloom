@@ -43,8 +43,9 @@ export async function downloadAndUploadAsset(
   retries: number = 2
 ): Promise<DownloadedAsset | null> {
   try {
-    // Handle SVG content differently
-    if (asset.type === 'svg' && asset.metadata?.svgContent) {
+    // Handle inline SVG content (identified by svgContent in metadata)
+    if (asset.metadata?.svgContent) {
+      console.log(`[Downloader] Uploading inline SVG: ${asset.source} (${asset.type})`)
       return await uploadSvgToS3(asset.metadata.svgContent, studioId, asset)
     }
 

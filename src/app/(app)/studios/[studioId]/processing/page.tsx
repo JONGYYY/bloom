@@ -97,23 +97,40 @@ export default function ProcessingPage() {
         console.log('[Processing] Fetched assets:', assetsData.assets?.length || 0)
         console.log('[Processing] Asset types:', assetsData.assets?.map((a: any) => a.type))
         
-        // Find the first logo asset
-        const logoAsset = assetsData.assets?.find((a: any) => a.type === 'logo')
-        console.log('[Processing] Logo asset found:', logoAsset ? 'YES' : 'NO')
+        // Find logo assets and prioritize by:
+        // 1. High priority logos
+        // 2. SVG format (vector logos are better)
+        // 3. Larger dimensions
+        const logoAssets = assetsData.assets?.filter((a: any) => 
+          a.type === 'logo' || a.type === 'favicon' || a.type.includes('logo')
+        ) || []
         
-        if (logoAsset) {
-          console.log('[Processing] Logo URL:', logoAsset.url)
-          setLogoUrl(logoAsset.url)
+        console.log('[Processing] Found', logoAssets.length, 'logo assets')
+        
+        if (logoAssets.length > 0) {
+          // Sort logos by priority and format
+          const sortedLogos = logoAssets.sort((a: any, b: any) => {
+            // Prioritize high priority
+            const priorityA = a.metadata?.priority === 'high' ? 2 : (a.metadata?.priority === 'medium' ? 1 : 0)
+            const priorityB = b.metadata?.priority === 'high' ? 2 : (b.metadata?.priority === 'medium' ? 1 : 0)
+            if (priorityA !== priorityB) return priorityB - priorityA
+            
+            // Prefer SVG format
+            const formatA = a.storageKey?.endsWith('.svg') ? 1 : 0
+            const formatB = b.storageKey?.endsWith('.svg') ? 1 : 0
+            if (formatA !== formatB) return formatB - formatA
+            
+            // Prefer larger dimensions
+            const sizeA = (a.metadata?.width || 0) * (a.metadata?.height || 0)
+            const sizeB = (b.metadata?.width || 0) * (b.metadata?.height || 0)
+            return sizeB - sizeA
+          })
+          
+          const bestLogo = sortedLogos[0]
+          console.log('[Processing] Selected logo:', bestLogo.storageKey, 'priority:', bestLogo.metadata?.priority)
+          setLogoUrl(bestLogo.url)
         } else {
-          console.log('[Processing] No logo asset found, checking for other options...')
-          // Fallback: try to find any asset that could be a logo
-          const fallbackLogo = assetsData.assets?.find((a: any) => 
-            a.type.includes('logo') || a.type === 'favicon'
-          )
-          if (fallbackLogo) {
-            console.log('[Processing] Using fallback logo:', fallbackLogo.type)
-            setLogoUrl(fallbackLogo.url)
-          }
+          console.log('[Processing] WARNING: No logo assets found')
         }
       }
     } catch (error) {
