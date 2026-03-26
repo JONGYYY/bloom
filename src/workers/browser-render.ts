@@ -115,9 +115,26 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
 
     // Extract DOM structure and computed styles
     const domData = await page.evaluate(() => {
-      const rgbToHex = (rgb: string): string => {
-        const match = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/)
-        if (!match) return rgb
+      const rgbToHex = (colorString: string): string => {
+        // Handle oklch/oklab/color() formats by converting to rgb first
+        // Modern CSS color formats need to be converted via the browser
+        if (colorString.startsWith('oklch') || colorString.startsWith('oklab') || colorString.startsWith('color(')) {
+          try {
+            const temp = document.createElement('div')
+            temp.style.color = colorString
+            document.body.appendChild(temp)
+            const computed = window.getComputedStyle(temp).color
+            document.body.removeChild(temp)
+            colorString = computed // Now it's rgb() or rgba() format
+          } catch (e) {
+            // If conversion fails, return original
+            return colorString
+          }
+        }
+        
+        // Now handle rgb/rgba format
+        const match = colorString.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/)
+        if (!match) return colorString
         
         const r = parseInt(match[1])
         const g = parseInt(match[2])
