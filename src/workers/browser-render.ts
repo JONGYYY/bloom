@@ -118,23 +118,49 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
       const rgbToHex = (colorString: string): string => {
         // Handle oklch/oklab/color() formats by converting to rgb first
         // Modern CSS color formats need to be converted via the browser
-        if (colorString.startsWith('oklch') || colorString.startsWith('oklab') || colorString.startsWith('color(')) {
+        if (colorString.startsWith('oklch') || colorString.startsWith('oklab') || colorString.startsWith('color(') || colorString.startsWith('lab(') || colorString.startsWith('lch(')) {
           try {
-            const temp = document.createElement('div')
-            temp.style.color = colorString
-            document.body.appendChild(temp)
-            const computed = window.getComputedStyle(temp).color
-            document.body.removeChild(temp)
-            colorString = computed // Now it's rgb() or rgba() format
+            // Create a canvas element to convert the color
+            const canvas = document.createElement('canvas')
+            canvas.width = 1
+            canvas.height = 1
+            const ctx = canvas.getContext('2d')
+            if (ctx) {
+              ctx.fillStyle = colorString
+              const computedColor = ctx.fillStyle
+              if (computedColor && computedColor !== colorString) {
+                colorString = computedColor
+              } else {
+                // Fallback: try with a temporary div
+                const temp = document.createElement('div')
+                temp.style.display = 'none'
+                temp.style.color = colorString
+                document.body.appendChild(temp)
+                const computed = window.getComputedStyle(temp).color
+                document.body.removeChild(temp)
+                if (computed && computed !== 'rgba(0, 0, 0, 0)') {
+                  colorString = computed
+                }
+              }
+            }
           } catch (e) {
-            // If conversion fails, return original
-            return colorString
+            // If conversion fails, skip this color
+            console.log(`Failed to convert color: ${colorString}`)
+            return ''
           }
+        }
+        
+        // Handle hex colors (already in correct format)
+        if (colorString.startsWith('#')) {
+          return colorString.toUpperCase()
         }
         
         // Now handle rgb/rgba format
         const match = colorString.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/)
-        if (!match) return colorString
+        if (!match) {
+          console.log(`Could not parse color: ${colorString}`)
+          return ''
+        }
         
         const r = parseInt(match[1])
         const g = parseInt(match[2])
@@ -190,21 +216,27 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
           const bgColor = styles.backgroundColor
           if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
             const hex = rgbToHex(bgColor)
-            colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
+            if (hex && hex.startsWith('#')) {
+              colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
+            }
           }
           
           // Get text color
           const textColor = styles.color
           if (textColor) {
             const hex = rgbToHex(textColor)
-            colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
+            if (hex && hex.startsWith('#')) {
+              colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
+            }
           }
           
           // Get border colors
           const borderColor = styles.borderColor
           if (borderColor && borderColor !== 'rgba(0, 0, 0, 0)' && borderColor !== 'transparent') {
             const hex = rgbToHex(borderColor)
-            colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
+            if (hex && hex.startsWith('#')) {
+              colorMap.set(hex, (colorMap.get(hex) || 0) + 1)
+            }
           }
         })
         

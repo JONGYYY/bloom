@@ -51,14 +51,15 @@ export async function downloadAndUploadAsset(
 
     console.log(`[Downloader] Downloading ${asset.type}: ${asset.source.substring(0, 100)}...`)
 
-    // Download the image with timeout
+    // Download the image with timeout (increased to 30 seconds)
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+    const timeout = setTimeout(() => controller.abort(), 30000) // 30 second timeout
 
     const response = await fetch(asset.source, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; BloomBot/1.0)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'image/*,*/*',
+        'Referer': new URL(asset.source).origin,
       },
       signal: controller.signal,
     })
@@ -78,11 +79,47 @@ export async function downloadAndUploadAsset(
       return null
     }
 
+    // Validate content type
+    const contentType = response.headers.get('content-type')
+    if (contentType && !contentType.startsWith('image/') && !contentType.includes('svg')) {
+      console.error(`[Downloader] Invalid content type: ${contentType} for ${asset.source}`)
+      return null
+    }
+
     const buffer = Buffer.from(await response.arrayBuffer())
 
-    // Process image with sharp
-    const image = sharp(buffer)
-    const metadata = await image.metadata()
+    // Validate buffer size
+    if (buffer.length === 0) {
+      console.error(`[Downloader] Empty buffer received for ${asset.source}`)
+      return null
+    }
+
+    if (buffer.length < 100) {
+      console.error(`[Downloader] Suspiciously small file (${buffer.length} bytes) for ${asset.source}`)
+      return null
+    }
+
+    // Process image with sharp and validate
+    let image
+    let metadata
+    try {
+      image = sharp(buffer)
+      metadata = await image.metadata()
+      
+      // Validate metadata
+      if (!metadata.format) {
+        console.error(`[Downloader] Could not determine image format for ${asset.source}`)
+        return null
+      }
+      
+      if (!metadata.width || !metadata.height) {
+        console.error(`[Downloader] Invalid image dimensions for ${asset.source}`)
+        return null
+      }
+    } catch (error) {
+      console.error(`[Downloader] Failed to process image with Sharp: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      return null
+    }
 
     // Generate hash for deduplication
     const hash = createHash('md5').update(buffer).digest('hex')
@@ -93,9 +130,14 @@ export async function downloadAndUploadAsset(
 
     // Convert to PNG if it's a problematic format
     if (!['png', 'jpeg', 'jpg', 'webp', 'svg'].includes(format)) {
-      const pngBuffer = await image.png().toBuffer()
-      processedBuffer = Buffer.from(pngBuffer)
-      format = 'png'
+      try {
+        const pngBuffer = await image.png().toBuffer()
+        processedBuffer = Buffer.from(pngBuffer)
+        format = 'png'
+      } catch (error) {
+        console.error(`[Downloader] Failed to convert image to PNG: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        return null
+      }
     }
 
     // Generate storage key
@@ -157,6 +199,18 @@ async function uploadSvgToS3(
 ): Promise<DownloadedAsset | null> {
   try {
     console.log(`[Downloader] Processing inline SVG (${asset.type})...`)
+    
+    // Validate SVG content
+    if (!svgContent || svgContent.length < 50) {
+      console.error(`[Downloader] SVG content too short (${svgContent.length} chars)`)
+      return null
+    }
+
+    if (!svgContent.includes('<svg')) {
+      console.error(`[Downloader] Invalid SVG content - missing <svg tag`)
+      return null
+    }
+    
     const buffer = Buffer.from(svgContent, 'utf-8')
     const hash = createHash('md5').update(buffer).digest('hex')
     const timestamp = Date.now()
