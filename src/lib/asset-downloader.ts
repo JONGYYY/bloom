@@ -153,6 +153,8 @@ export async function downloadAndUploadAsset(
         Key: storageKey,
         Body: processedBuffer,
         ContentType: `image/${format}`,
+        ContentDisposition: 'inline', // Force browser to display, not download
+        CacheControl: 'public, max-age=31536000', // Cache for 1 year
       })
     )
 
@@ -268,6 +270,8 @@ async function uploadSvgToS3(
         Key: storageKey,
         Body: buffer,
         ContentType: 'image/svg+xml',
+        ContentDisposition: 'inline', // Force browser to display, not download
+        CacheControl: 'public, max-age=31536000', // Cache for 1 year
       })
     )
 

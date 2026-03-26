@@ -398,7 +398,8 @@ Return a JSON object with this EXACT structure:
         
         // Add each color with a weight based on asset type
         // Logos and icons get higher weight since they're more likely to contain brand colors
-        const weight = (asset.storageKey.includes('logo') || asset.storageKey.includes('icon')) ? 15 : 10
+        // Increased weights to ensure image colors are prioritized over CSS colors
+        const weight = (asset.storageKey.includes('logo') || asset.storageKey.includes('icon')) ? 20 : 15
         
         for (const color of asset.dominantColors) {
           const existing = imageColorMap.get(color) || 0
@@ -433,7 +434,7 @@ Return a JSON object with this EXACT structure:
     // Select colors deterministically using frequency-based algorithm
     console.log(`[Extraction] Selecting colors deterministically from ${mergedColors.length} extracted colors`)
     const colorSelection = selectBrandColors(mergedColors, {
-      minFrequency: 6, // Only include colors used 6+ times
+      minFrequency: 3, // Lowered from 6 to include brand colors that appear in images/assets
       maxColors: 10,
       similarityThreshold: 8,
     })
