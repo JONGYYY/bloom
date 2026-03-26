@@ -77,19 +77,13 @@ The application is configured to use direct S3 URLs:
   - `AWS_ACCESS_KEY_ID`: Your AWS access key
   - `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
 
-## Troubleshooting
+## Step 5: Configure CORS (REQUIRED for browser access)
 
-**Images still not loading?**
-1. Check browser console for CORS errors
-2. Verify bucket policy is saved correctly
-3. Ensure `AWS_S3_BUCKET` and `AWS_REGION` environment variables are correct in Railway
-4. Try accessing the S3 URL directly in a new browser tab
-5. Check that the objects were actually uploaded (go to S3 console and verify files exist)
+Even with the bucket policy, browsers need CORS configuration to load images:
 
-**CORS Issues?**
-Add CORS configuration in S3 bucket:
-1. Go to **Permissions** > **Cross-origin resource sharing (CORS)**
-2. Add:
+1. In the **Permissions** tab, scroll to **Cross-origin resource sharing (CORS)**
+2. Click **Edit**
+3. Paste this CORS configuration:
 
 ```json
 [
@@ -97,7 +91,53 @@ Add CORS configuration in S3 bucket:
     "AllowedHeaders": ["*"],
     "AllowedMethods": ["GET", "HEAD"],
     "AllowedOrigins": ["*"],
-    "ExposeHeaders": []
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
   }
 ]
 ```
+
+4. Click **Save changes**
+
+**Important**: Without CORS, images will fail to load in the browser even if the bucket policy is correct!
+
+## Troubleshooting
+
+### Images still not loading?
+
+**Step 1: Check Browser Console**
+Open your browser's developer tools (F12) and look for errors:
+- **CORS error**: "Access to fetch at '...' from origin '...' has been blocked by CORS policy"
+  → Fix: Add CORS configuration (see Step 5 above)
+- **403 Forbidden**: "Access Denied"
+  → Fix: Verify bucket policy is applied correctly
+- **404 Not Found**: "The specified key does not exist"
+  → Fix: Check that files were actually uploaded to S3
+
+**Step 2: Test Direct S3 Access**
+1. Copy an S3 URL from the Railway logs (look for `[Downloader] Public URL:`)
+2. Paste it directly in a new browser tab
+3. If the image loads → CORS issue. If it doesn't load → bucket policy issue.
+
+**Step 3: Verify Environment Variables**
+In Railway, check these environment variables are set correctly:
+- `AWS_S3_BUCKET`: Your bucket name (e.g., `bloom-assets`)
+- `AWS_REGION`: Your bucket region (e.g., `us-east-1`)
+- `AWS_ACCESS_KEY_ID`: Your AWS access key
+- `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
+
+**Step 4: Check S3 Console**
+1. Go to your S3 bucket in AWS console
+2. Navigate to the `studios/` folder
+3. Verify that image files exist
+4. Click on a file and try to open the "Object URL" - if it works, your bucket is configured correctly
+
+**Step 5: Verify Block Public Access Settings**
+Make sure these are **OFF** (unchecked):
+- ☐ Block all public access
+- ☐ Block public access to buckets and objects granted through new access control lists (ACLs)
+- ☐ Block public access to buckets and objects granted through any access control lists (ACLs)
+- ☐ Block public access to buckets and objects granted through new public bucket or access point policies
+- ☐ Block public and cross-account access to buckets and objects through any public bucket or access point policies
+
+All five should be **unchecked** for public access to work.
