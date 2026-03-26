@@ -279,11 +279,18 @@ Return a JSON object with this EXACT structure:
           ],
         },
       ],
-      max_tokens: 2000,
+      max_tokens: 4000, // Increased to accommodate 20-35 assets
       response_format: { type: 'json_object' },
     })
 
-    const extractedData = JSON.parse(response.choices[0].message.content || '{}')
+    let extractedData
+    try {
+      extractedData = JSON.parse(response.choices[0].message.content || '{}')
+    } catch (error) {
+      console.error('[Extraction] Failed to parse OpenAI response:', error)
+      console.error('[Extraction] Raw response:', response.choices[0].message.content?.substring(0, 500))
+      throw new Error(`Failed to parse AI response: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
 
     console.log(`[Extraction] Received data from OpenAI:`, extractedData)
 
