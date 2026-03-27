@@ -287,6 +287,12 @@ async function uploadSvgToS3(
     const storageKey = `studios/${studioId}/brand-assets/${asset.type}-${timestamp}-${hash.substring(0, 8)}.svg`
 
     // Upload SVG with proper headers to ensure inline display
+    console.log(`[Downloader] Uploading to S3 with headers:`, {
+      ContentType: 'image/svg+xml; charset=utf-8',
+      ContentDisposition: 'inline',
+      CacheControl: 'public, max-age=31536000'
+    })
+    
     await s3Client.send(
       new PutObjectCommand({
         Bucket: process.env.AWS_S3_BUCKET!,
