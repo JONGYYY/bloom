@@ -130,7 +130,7 @@ export async function downloadAndUploadAsset(
     let processedBuffer = buffer
     let format = metadata.format || 'png'
 
-    // Convert to PNG if it's a problematic format
+    // Convert to PNG if it's a problematic format OR if it's SVG
     if (!['png', 'jpeg', 'jpg', 'webp', 'svg'].includes(format)) {
       try {
         const pngBuffer = await image.png().toBuffer()
@@ -139,6 +139,28 @@ export async function downloadAndUploadAsset(
       } catch (error) {
         console.error(`[Downloader] Failed to convert image to PNG: ${error instanceof Error ? error.message : 'Unknown error'}`)
         return null
+      }
+    }
+
+    // Convert SVG to PNG for guaranteed browser compatibility
+    if (format === 'svg') {
+      console.log(`[Downloader] Attempting SVG to PNG conversion with Sharp...`)
+      try {
+        const pngBuffer = await sharp(buffer, { density: 300 })
+          .resize(1024, 1024, {
+            fit: 'inside',
+            withoutEnlargement: true,
+            background: { r: 255, g: 255, b: 255, alpha: 0 },
+          })
+          .png()
+          .toBuffer()
+        
+        processedBuffer = Buffer.from(pngBuffer)
+        format = 'png'
+        console.log(`[Downloader] ✓ Converted SVG to PNG (${processedBuffer.length} bytes)`)
+      } catch (error: any) {
+        console.log(`[Downloader] Sharp conversion failed (${error.message}), keeping as SVG`)
+        // Keep as SVG if conversion fails
       }
     }
 
