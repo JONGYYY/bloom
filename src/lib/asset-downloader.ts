@@ -259,7 +259,24 @@ async function uploadSvgToS3(
     
     console.log(`[Downloader] SVG validation passed (${svgContent.length} chars, has drawable content)`)
     
-    const buffer = Buffer.from(svgContent, 'utf-8')
+    // Sanitize SVG content to ensure browser compatibility
+    // Remove potentially problematic elements that might cause rendering issues
+    let sanitizedSvg = svgContent
+      // Remove script tags (security risk)
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      // Remove event handlers (onclick, onload, etc.)
+      .replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '')
+      // Remove foreign objects (can cause issues)
+      .replace(/<foreignObject[^>]*>[\s\S]*?<\/foreignObject>/gi, '')
+      // Ensure xmlns is present for standalone rendering
+    
+    if (!sanitizedSvg.includes('xmlns=')) {
+      sanitizedSvg = sanitizedSvg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"')
+    }
+    
+    console.log(`[Downloader] SVG sanitized (${sanitizedSvg.length} chars after sanitization)`)
+    
+    const buffer = Buffer.from(sanitizedSvg, 'utf-8')
     const hash = createHash('md5').update(buffer).digest('hex')
     const timestamp = Date.now()
     const storageKey = `studios/${studioId}/brand-assets/${asset.type}-${timestamp}-${hash.substring(0, 8)}.svg`
