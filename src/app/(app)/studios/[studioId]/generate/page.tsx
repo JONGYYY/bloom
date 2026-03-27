@@ -26,7 +26,7 @@ export default function GeneratePage() {
       parameters: {
         aspectRatio: '1:1',
         quality: 'draft',
-        variants: 2,
+        variants: 1,
         referenceImages: []
       }
     }
