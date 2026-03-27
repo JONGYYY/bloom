@@ -227,8 +227,8 @@ async function uploadSvgToS3(
   try {
     console.log(`[Downloader] Processing inline SVG (${asset.type})...`)
     
-    // Validate SVG content
-    if (!svgContent || svgContent.length < 50) {
+    // Validate SVG content - be lenient to maximize asset extraction
+    if (!svgContent || svgContent.length < 30) {
       console.error(`[Downloader] SVG content too short (${svgContent.length} chars)`)
       return null
     }
@@ -238,8 +238,8 @@ async function uploadSvgToS3(
       return null
     }
     
-    // Check for actual SVG content (paths, shapes, etc.) - not just an empty wrapper
-    // Made more lenient - check for any drawable element OR defs/symbol (which can contain reusable content)
+    // Very lenient content check - just make sure it's not completely empty
+    // Accept if it has ANY of these common SVG elements
     const hasContent = 
       svgContent.includes('<path') ||
       svgContent.includes('<circle') ||
@@ -251,18 +251,20 @@ async function uploadSvgToS3(
       svgContent.includes('<text') ||
       svgContent.includes('<image') ||
       svgContent.includes('<use') ||
-      svgContent.includes('<g') || // Group elements
-      svgContent.includes('<defs') || // Definitions (reusable elements)
-      svgContent.includes('<symbol') || // Symbols (reusable graphics)
-      svgContent.includes('<clipPath') || // Clip paths
-      svgContent.includes('<mask') // Masks
+      svgContent.includes('<g') ||
+      svgContent.includes('<defs') ||
+      svgContent.includes('<symbol') ||
+      svgContent.includes('<clipPath') ||
+      svgContent.includes('<mask') ||
+      svgContent.includes('viewBox') || // SVGs with viewBox are usually valid
+      svgContent.length > 100 // If it's substantial, probably has content
     
     if (!hasContent) {
-      console.error(`[Downloader] SVG has no drawable content - rejecting empty wrapper`)
+      console.error(`[Downloader] SVG appears to be empty wrapper - rejecting`)
       return null
     }
     
-    console.log(`[Downloader] SVG validation passed (${svgContent.length} chars, has drawable content)`)
+    console.log(`[Downloader] SVG validation passed (${svgContent.length} chars)`)
     
     // Sanitize SVG content to ensure browser compatibility
     // Remove potentially problematic elements that might cause rendering issues
