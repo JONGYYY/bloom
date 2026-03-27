@@ -227,9 +227,9 @@ async function uploadSvgToS3(
   try {
     console.log(`[Downloader] Processing inline SVG (${asset.type})...`)
     
-    // Validate SVG content - must be substantial
-    if (!svgContent || svgContent.length < 200) {
-      console.error(`[Downloader] SVG content too short (${svgContent.length} chars) - likely empty wrapper`)
+    // Validate SVG content
+    if (!svgContent || svgContent.length < 50) {
+      console.error(`[Downloader] SVG content too short (${svgContent.length} chars)`)
       return null
     }
 
@@ -239,6 +239,7 @@ async function uploadSvgToS3(
     }
     
     // Check for actual SVG content (paths, shapes, etc.) - not just an empty wrapper
+    // Made more lenient - check for any drawable element OR defs/symbol (which can contain reusable content)
     const hasContent = 
       svgContent.includes('<path') ||
       svgContent.includes('<circle') ||
@@ -250,7 +251,11 @@ async function uploadSvgToS3(
       svgContent.includes('<text') ||
       svgContent.includes('<image') ||
       svgContent.includes('<use') ||
-      svgContent.includes('<g') // Group elements often contain content
+      svgContent.includes('<g') || // Group elements
+      svgContent.includes('<defs') || // Definitions (reusable elements)
+      svgContent.includes('<symbol') || // Symbols (reusable graphics)
+      svgContent.includes('<clipPath') || // Clip paths
+      svgContent.includes('<mask') // Masks
     
     if (!hasContent) {
       console.error(`[Downloader] SVG has no drawable content - rejecting empty wrapper`)
