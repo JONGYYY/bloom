@@ -2,6 +2,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { createHash } from 'crypto'
 import sharp from 'sharp'
 import { Vibrant } from 'node-vibrant/node'
+import { convertSvgToPng } from './svg-to-png'
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',
@@ -281,48 +282,22 @@ async function uploadSvgToS3(
       sanitizedSvg = sanitizedSvg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"')
     }
     
-    console.log(`[Downloader] Converting SVG to PNG for maximum compatibility...`)
+    console.log(`[Downloader] Converting SVG to PNG using Puppeteer...`)
     
-    // Convert SVG to PNG using Sharp for guaranteed browser compatibility
+    // Convert SVG to PNG using Puppeteer for 100% browser compatibility
     let finalBuffer: Buffer
     let finalFormat: string
     let finalContentType: string
     
     try {
-      const svgBuffer = Buffer.from(sanitizedSvg, 'utf-8')
-      
-      console.log(`[Downloader] Attempting Sharp SVG->PNG conversion (input: ${svgBuffer.length} bytes)...`)
-      
-      // Convert SVG to PNG with Sharp
-      // Sharp automatically converts SVG to PNG when calling .png()
-      const pngBuffer = await sharp(svgBuffer, {
-        density: 300, // High DPI for quality
-      })
-        .resize(1024, 1024, {
-          fit: 'inside', // Maintain aspect ratio
-          withoutEnlargement: true, // Don't upscale small images
-          background: { r: 255, g: 255, b: 255, alpha: 0 }, // Transparent background
-        })
-        .png({
-          compressionLevel: 9, // Maximum compression
-          adaptiveFiltering: true,
-        })
-        .toBuffer()
-      
+      const pngBuffer = await convertSvgToPng(sanitizedSvg)
       finalBuffer = pngBuffer
       finalFormat = 'png'
       finalContentType = 'image/png'
-      
       console.log(`[Downloader] ✓ Successfully converted SVG to PNG (${finalBuffer.length} bytes)`)
     } catch (conversionError: any) {
-      // If conversion fails, fall back to original SVG
-      console.error(`[Downloader] ✗ SVG to PNG conversion failed:`, {
-        error: conversionError.message || conversionError,
-        stack: conversionError.stack,
-        svgLength: sanitizedSvg.length,
-        svgStart: sanitizedSvg.substring(0, 200)
-      })
-      console.log(`[Downloader] Falling back to original SVG format`)
+      console.error(`[Downloader] ✗ SVG to PNG conversion failed:`, conversionError.message)
+      console.log(`[Downloader] Falling back to original SVG`)
       finalBuffer = Buffer.from(sanitizedSvg, 'utf-8')
       finalFormat = 'svg'
       finalContentType = 'image/svg+xml'
