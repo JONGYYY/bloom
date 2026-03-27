@@ -44,28 +44,31 @@ export async function GET(
       )
     }
 
-    // Fetch brand assets
-    const assets = await prisma.brandAsset.findMany({
-      where: { studioId },
+    // Get tab filter from query params
+    const { searchParams } = new URL(request.url)
+    const tab = searchParams.get('tab') || 'recent'
+    
+    // Fetch assets based on tab
+    let whereClause: any = { studioId }
+    
+    if (tab === 'favorites') {
+      whereClause.isFavorite = true
+    } else if (tab === 'references') {
+      whereClause.isReference = true
+    }
+    // 'recent' shows all assets
+    
+    const assets = await prisma.asset.findMany({
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
+      take: 50, // Limit to 50 most recent
     })
 
-    // Construct full S3 URLs for each asset
-    const bucket = process.env.AWS_S3_BUCKET || 'bloom-assets'
-    const region = process.env.AWS_REGION || 'us-east-1'
+    console.log(`[Assets API] Found ${assets.length} assets for tab: ${tab}`)
     
-    console.log(`[Assets API] Constructing URLs with bucket: ${bucket}, region: ${region}`)
-    
-    const assetsWithUrls = assets.map(asset => ({
-      ...asset,
-      url: `https://${bucket}.s3.${region}.amazonaws.com/${asset.storageKey}`
-    }))
-
-    if (assetsWithUrls.length > 0) {
-      console.log(`[Assets API] Sample URL: ${assetsWithUrls[0].url}`)
-    }
-
-    return NextResponse.json({ assets: assetsWithUrls })
+    // Assets already have the 'url' field from generation worker
+    // Just return them directly
+    return NextResponse.json({ assets })
   } catch (error) {
     console.error('Error fetching brand assets:', error)
     return NextResponse.json(

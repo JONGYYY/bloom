@@ -265,10 +265,10 @@ Return a JSON object with this EXACT structure:
   }
 }`
 
-    console.log(`[Extraction] Calling OpenAI GPT-4 Vision API`)
+    console.log(`[Extraction] Calling OpenAI GPT-4o-mini Vision API`)
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'user',
