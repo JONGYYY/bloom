@@ -281,14 +281,41 @@ async function uploadSvgToS3(
       sanitizedSvg = sanitizedSvg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"')
     }
     
-    const buffer = Buffer.from(sanitizedSvg, 'utf-8')
-    const hash = createHash('md5').update(buffer).digest('hex')
+    // Try to convert SVG to PNG using Sharp
+    let finalBuffer: Buffer
+    let finalFormat: string
+    let finalContentType: string
+    
+    console.log(`[Downloader] Attempting SVG to PNG conversion with Sharp...`)
+    try {
+      const svgBuffer = Buffer.from(sanitizedSvg, 'utf-8')
+      const pngBuffer = await sharp(svgBuffer, { density: 300 })
+        .resize(1024, 1024, {
+          fit: 'inside',
+          withoutEnlargement: true,
+          background: { r: 255, g: 255, b: 255, alpha: 0 },
+        })
+        .png()
+        .toBuffer()
+      
+      finalBuffer = pngBuffer
+      finalFormat = 'png'
+      finalContentType = 'image/png'
+      console.log(`[Downloader] ✓ Converted SVG to PNG (${finalBuffer.length} bytes)`)
+    } catch (error: any) {
+      console.log(`[Downloader] Sharp conversion failed (${error.message}), keeping as SVG`)
+      finalBuffer = Buffer.from(sanitizedSvg, 'utf-8')
+      finalFormat = 'svg'
+      finalContentType = 'image/svg+xml; charset=utf-8'
+    }
+    
+    const hash = createHash('md5').update(finalBuffer).digest('hex')
     const timestamp = Date.now()
-    const storageKey = `studios/${studioId}/brand-assets/${asset.type}-${timestamp}-${hash.substring(0, 8)}.svg`
+    const storageKey = `studios/${studioId}/brand-assets/${asset.type}-${timestamp}-${hash.substring(0, 8)}.${finalFormat}`
 
-    // Upload SVG with proper headers to ensure inline display
-    console.log(`[Downloader] Uploading to S3 with headers:`, {
-      ContentType: 'image/svg+xml; charset=utf-8',
+    // Upload with proper headers
+    console.log(`[Downloader] Uploading ${finalFormat.toUpperCase()} to S3 with headers:`, {
+      ContentType: finalContentType,
       ContentDisposition: 'inline',
       CacheControl: 'public, max-age=31536000'
     })
@@ -297,8 +324,8 @@ async function uploadSvgToS3(
       new PutObjectCommand({
         Bucket: process.env.AWS_S3_BUCKET!,
         Key: storageKey,
-        Body: buffer,
-        ContentType: 'image/svg+xml; charset=utf-8', // Explicit charset
+        Body: finalBuffer,
+        ContentType: finalContentType,
         ContentDisposition: 'inline', // Force browser to display, not download
         CacheControl: 'public, max-age=31536000', // Cache for 1 year
       })
@@ -339,7 +366,7 @@ async function uploadSvgToS3(
       console.log(`[Downloader] Extracted ${dominantColors.length} colors from SVG: ${dominantColors.join(', ')}`)
     }
 
-    console.log(`[Downloader] ✓ Successfully uploaded SVG to S3: ${storageKey}`)
+    console.log(`[Downloader] ✓ Successfully uploaded ${finalFormat.toUpperCase()} to S3: ${storageKey}`)
 
     return {
       storageKey,
@@ -347,8 +374,8 @@ async function uploadSvgToS3(
       originalUrl: 'inline-svg',
       width,
       height,
-      format: 'svg',
-      size: buffer.length,
+      format: finalFormat,
+      size: finalBuffer.length,
       hash,
       dominantColors: dominantColors.length > 0 ? dominantColors : undefined,
     }

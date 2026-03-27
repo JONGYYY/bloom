@@ -321,6 +321,8 @@ async function processBrowserRenderJob(job: Job<BrowserRenderJobData>) {
         })
         
         // 3. SVG elements (inline)
+        // Note: We extract SVG content here, but conversion to PNG happens later
+        // in the asset-downloader to keep this extraction phase fast
         document.querySelectorAll('svg').forEach(svg => {
           const bbox = svg.getBBox ? svg.getBBox() : { width: 0, height: 0 }
           images.push({
